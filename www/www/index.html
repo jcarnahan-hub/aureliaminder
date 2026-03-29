@@ -1215,7 +1215,7 @@ function openDetail(id){
     <div>${v.prepaid?`<span class="badge b-prepaid">Pre-paid ${fmtDate(v.prepaidDate)}</span>`:v.paid?`<span class="badge b-paid">Paid ${fmtDate(v.paidDate)}</span>`:`<span class="badge b-closed">Unpaid</span>`}</div>
   </div>`).join('')}`:'';
   document.getElementById('detail-body').innerHTML=`
-    <div class="dico-row">${renderIcon(b.icon,68)}<div class="dname">${b.name}</div><div class="dfreq">${b.freq} · ${fmtM(b.amount)}</div><div style="margin-top:6px">${sb}</div>${b.endDate?renderCountdownBadge(b):''}</div>
+    <div class="dico-row">${renderIconWithUrl(b.icon,b.url,68)}<div class="dname">${b.name}</div><div class="dfreq">${b.freq} · ${fmtM(b.amount)}</div><div style="margin-top:6px">${sb}</div>${b.endDate?renderCountdownBadge(b):''}</div>
     <div style="padding-bottom:8px">
       <div class="dr"><span class="dr-lbl">Start date</span><span class="dr-val">${fmtDate(b.startDate)}</span></div>
       <div class="dr"><span class="dr-lbl">End date</span><span class="dr-val">${b.endDate?fmtDate(b.endDate):'Ongoing'}</span></div>
@@ -1306,6 +1306,30 @@ function renderNotifBanners(){
   if(alerts.length>3) container.innerHTML+=`<div style="font-size:12px;color:var(--text2);text-align:center;padding:6px 0">${alerts.length-3} more reminder${alerts.length-3!==1?'s':''}</div>`;
 }
 
+
+// Render icon with URL fallback - uses bill's website domain if no brand logo set
+function renderIconWithUrl(v,url,size=42){
+  // If it's already a brand logo, use it
+  if(v && v.startsWith('__brand__')) return renderIcon(v,size);
+  // If it's an emoji and we have a URL, try to get logo from URL domain
+  if(url && url.trim()){
+    try {
+      const domain = new URL(url.trim()).hostname.replace('www.','');
+      const r=Math.round(size*.26);
+      const clrUrl=`https://logo.clearbit.com/${domain}`;
+      const gglUrl=`https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+      const fallback=v&&v!=='💳'?v:'$';
+      return`<div style="width:${size}px;height:${size}px;border-radius:${r}px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <img src="${clrUrl}" style="width:${size}px;height:${size}px;object-fit:contain"
+          onerror="this.src='${gglUrl}';this.onerror=function(){this.parentNode.style.background='var(--bg3)';this.parentNode.innerHTML='<div style=\'width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.5)}px\'>${fallback}</div>';}"
+          alt="${domain}">
+      </div>`;
+    } catch(e){}
+  }
+  // Fall back to regular renderIcon
+  return renderIcon(v,size);
+}
+
 // ══════════════════════════════════════════
 //  BILL LIST
 // ══════════════════════════════════════════
@@ -1394,7 +1418,7 @@ function renderCalendar(){
   document.getElementById('cal-days').innerHTML=html;
   const mb=bills.filter(b=>isActiveIn(b,calYear,calMonth)).sort((a,b_)=>new Date(dueDateFor(a,calYear,calMonth))-new Date(dueDateFor(b_,calYear,calMonth)));
   if(!mb.length){document.getElementById('cal-bill-list').innerHTML=`<div class="empty" style="padding:24px"><div class="empty-t">No bills this month</div></div>`;return;}
-  document.getElementById('cal-bill-list').innerHTML=mb.map(b=>{const p=paymentThisMonth(b);const cls=p?.prepaid?'is-prepaid':p?.paid?'is-paid':isOverdue(b)?'is-overdue':'';const badge=p?.prepaid?`<span class="badge b-prepaid">Pre-paid</span>`:p?.paid?`<span class="badge b-paid">Paid</span>`:isOverdue(b)?`<span class="badge b-overdue">Overdue</span>`:'';return`<div class="bi ${cls}" onclick="openDetail(${b.id})">${renderIcon(b.icon,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">Due ${fmtDate(dueDateFor(b,calYear,calMonth))}</div></div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div></div></div>`;}).join('');
+  document.getElementById('cal-bill-list').innerHTML=mb.map(b=>{const p=paymentThisMonth(b);const cls=p?.prepaid?'is-prepaid':p?.paid?'is-paid':isOverdue(b)?'is-overdue':'';const badge=p?.prepaid?`<span class="badge b-prepaid">Pre-paid</span>`:p?.paid?`<span class="badge b-paid">Paid</span>`:isOverdue(b)?`<span class="badge b-overdue">Overdue</span>`:'';return`<div class="bi ${cls}" onclick="openDetail(${b.id})">${renderIconWithUrl(b.icon,b.url,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">Due ${fmtDate(dueDateFor(b,calYear,calMonth))}</div></div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div></div></div>`;}).join('');
 }
 function openCalDay(ds){
   const[y,m,d]=ds.split('-').map(Number);
