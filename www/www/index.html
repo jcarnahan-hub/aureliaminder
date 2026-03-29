@@ -906,6 +906,62 @@ function setSort(s,btn){
 //  BRAND LOGO SYSTEM
 // ══════════════════════════════════════════
 const BRAND_MAP={
+
+  'affirm':{name:'Affirm',domain:'affirm.com'},
+  'bagsmart':{name:'Bagsmart',domain:'bagsmart.com'},
+  'fetch':{name:'Fetch',domain:'fetchrewards.com'},
+  'fetch pet':{name:'Fetch Pet',domain:'fetchpet.com'},
+  'carecredit':{name:'CareCredit',domain:'carecredit.com'},
+  'care credit':{name:'CareCredit',domain:'carecredit.com'},
+  'florida city gas':{name:'Florida City Gas',domain:'floridacitygas.com'},
+  'hulu':{name:'Hulu',domain:'hulu.com'},
+  'espn':{name:'ESPN+',domain:'espnplus.com'},
+  'espn+':{name:'ESPN+',domain:'espnplus.com'},
+  'hulu disney espn':{name:'Hulu/Disney+/ESPN+',domain:'hulu.com'},
+  'carrington':{name:'Carrington Mortgage',domain:'carringtonms.com'},
+  'carrington mortgage':{name:'Carrington Mortgage',domain:'carringtonms.com'},
+  'fpl':{name:'FPL',domain:'fpl.com'},
+  'florida power':{name:'FPL',domain:'fpl.com'},
+  'duke energy':{name:'Duke Energy',domain:'duke-energy.com'},
+  'peoples gas':{name:'Peoples Gas',domain:'peoplesgas.com'},
+  'comcast':{name:'Comcast',domain:'comcast.com'},
+  'capital one':{name:'Capital One',domain:'capitalone.com'},
+  'chase':{name:'Chase',domain:'chase.com'},
+  'bank of america':{name:'Bank of America',domain:'bankofamerica.com'},
+  'wells fargo':{name:'Wells Fargo',domain:'wellsfargo.com'},
+  'discover':{name:'Discover',domain:'discover.com'},
+  'citi':{name:'Citi',domain:'citi.com'},
+  'synchrony':{name:'Synchrony',domain:'synchrony.com'},
+  'apple card':{name:'Apple Card',domain:'apple.com'},
+  'american express':{name:'Amex',domain:'americanexpress.com'},
+  'amex':{name:'Amex',domain:'americanexpress.com'},
+  'rent':{name:'Rent',domain:'apartments.com'},
+  'mortgage':{name:'Mortgage',domain:'mortgagecalculator.org'},
+  'planet fitness':{name:'Planet Fitness',domain:'planetfitness.com'},
+  'la fitness':{name:'LA Fitness',domain:'lafitness.com'},
+  'anytime fitness':{name:'Anytime Fitness',domain:'anytimefitness.com'},
+  'ymca':{name:'YMCA',domain:'ymca.net'},
+  'progressive':{name:'Progressive',domain:'progressive.com'},
+  'geico':{name:'GEICO',domain:'geico.com'},
+  'state farm':{name:'State Farm',domain:'statefarm.com'},
+  'allstate':{name:'Allstate',domain:'allstate.com'},
+  'usaa':{name:'USAA',domain:'usaa.com'},
+  'aetna':{name:'Aetna',domain:'aetna.com'},
+  'bluecross':{name:'Blue Cross',domain:'bcbs.com'},
+  'blue cross':{name:'Blue Cross',domain:'bcbs.com'},
+  'cigna':{name:'Cigna',domain:'cigna.com'},
+  'humana':{name:'Humana',domain:'humana.com'},
+  'united health':{name:'UnitedHealth',domain:'unitedhealthcare.com'},
+  'amazon prime':{name:'Amazon Prime',domain:'amazon.com'},
+  'whole foods':{name:'Whole Foods',domain:'wholefoodsmarket.com'},
+  'walmart+':{name:'Walmart+',domain:'walmart.com'},
+  'sam\'s club':{name:'Sam\'s Club',domain:'samsclub.com'},
+  'sams club':{name:'Sam\'s Club',domain:'samsclub.com'},
+  'costco':{name:'Costco',domain:'costco.com'},
+  'student loan':{name:'Student Loan',domain:'studentaid.gov'},
+  'sallie mae':{name:'Sallie Mae',domain:'salliemae.com'},
+  'navient':{name:'Navient',domain:'navient.com'},
+  'mohela':{name:'MOHELA',domain:'mohela.com'},
   'netflix':{name:'Netflix',domain:'netflix.com'},'hulu':{name:'Hulu',domain:'hulu.com'},
   'disney+':{name:'Disney+',domain:'disneyplus.com'},'disney':{name:'Disney+',domain:'disneyplus.com'},
   'hbo':{name:'HBO Max',domain:'max.com'},'max':{name:'Max',domain:'max.com'},
@@ -957,8 +1013,10 @@ const BRAND_MAP={
   'apple arcade':{name:'Apple Arcade',domain:'apple.com'},'apple fitness':{name:'Apple Fitness+',domain:'apple.com'},
 };
 
-function brandLogoUrl(d){ return`https://www.google.com/s2/favicons?domain=${d}&sz=128`; }
-function currentIcon(){ return selBrandDomain?`__brand__${selBrandDomain}__${selBrandName}`:selEmoji; }
+function brandLogoUrl(d){ return`https://logo.clearbit.com/${d}`; }
+function brandLogoUrlFallback(d){ return`https://www.google.com/s2/favicons?domain=${d}&sz=128`; }
+
+// Smart renderIcon with Clearbit primary + Google favicon fallback
 function renderIcon(v,size=42){
   const r=Math.round(size*.26);
   if(!v||(!v.startsWith('__brand__')&&!v.trim()))
@@ -966,10 +1024,17 @@ function renderIcon(v,size=42){
   if(v.startsWith('__brand__')){
     const pts=v.split('__').filter(Boolean);
     const dom=pts[1],nm=pts[2]||'';
-    return`<div style="width:${size}px;height:${size}px;border-radius:${r}px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0"><img src="${brandLogoUrl(dom)}" style="width:${size}px;height:${size}px;object-fit:contain" onerror="this.parentNode.innerHTML='<span style=\\'font-size:${Math.round(size*.5)}px\\'>${nm||'🏢'}</span>'" alt="${nm}"></div>`;
+    const clrUrl=brandLogoUrl(dom);
+    const gglUrl=brandLogoUrlFallback(dom);
+    return`<div style="width:${size}px;height:${size}px;border-radius:${r}px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="${clrUrl}" style="width:${size}px;height:${size}px;object-fit:contain"
+        onerror="this.src='${gglUrl}';this.onerror=function(){this.parentNode.innerHTML='<div style=\'width:${size}px;height:${size}px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.4)}px;font-weight:700;color:var(--accent);border-radius:${r}px\'>'+(nm?nm[0].toUpperCase():'$')+'</div>';}"
+        alt="${nm}">
+    </div>`;
   }
   return`<div style="width:${size}px;height:${size}px;border-radius:${r}px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.5)}px;flex-shrink:0">${v}</div>`;
 }
+function currentIcon(){ return selBrandDomain?`__brand__${selBrandDomain}__${selBrandName}`:selEmoji; }
 
 function detectBrand(name){
   if(!name)return null;
