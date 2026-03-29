@@ -1013,8 +1013,9 @@ const BRAND_MAP={
   'apple arcade':{name:'Apple Arcade',domain:'apple.com'},'apple fitness':{name:'Apple Fitness+',domain:'apple.com'},
 };
 
-function brandLogoUrl(d){ return`https://logo.clearbit.com/${d}`; }
+function brandLogoUrl(d){ return`https://img.logo.dev/${d}?token=pk_X-1ZO13GSgeOoUrIuJ6BeQ`; }
 function brandLogoUrlFallback(d){ return`https://www.google.com/s2/favicons?domain=${d}&sz=128`; }
+function brandLogoUrlFallback2(d){ return`https://logo.clearbit.com/${d}`; }
 
 // Smart renderIcon with Clearbit primary + Google favicon fallback
 function renderIcon(v,size=42){
@@ -1028,7 +1029,7 @@ function renderIcon(v,size=42){
     const gglUrl=brandLogoUrlFallback(dom);
     return`<div style="width:${size}px;height:${size}px;border-radius:${r}px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
       <img src="${clrUrl}" style="width:${size}px;height:${size}px;object-fit:contain"
-        onerror="this.src='${gglUrl}';this.onerror=function(){this.parentNode.innerHTML='<div style=\'width:${size}px;height:${size}px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.4)}px;font-weight:700;color:var(--accent);border-radius:${r}px\'>'+(nm?nm[0].toUpperCase():'$')+'</div>';}"
+        onerror="if(this.src.indexOf('logo.dev')>-1){this.src='${gglUrl}';}else if(this.src.indexOf('google')>-1){this.src='https://logo.clearbit.com/${dom}';}else{this.parentNode.style.background='var(--bg3)';this.parentNode.innerHTML='<div style=\'width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.4)}px;font-weight:700;color:var(--accent)\'>'+(nm?nm[0].toUpperCase():'$')+'</div>';}""
         alt="${nm}">
     </div>`;
   }
@@ -1316,12 +1317,12 @@ function renderIconWithUrl(v,url,size=42){
     try {
       const domain = new URL(url.trim()).hostname.replace('www.','');
       const r=Math.round(size*.26);
-      const clrUrl=`https://logo.clearbit.com/${domain}`;
+      const clrUrl=`https://img.logo.dev/${domain}?token=pk_X-1ZO13GSgeOoUrIuJ6BeQ`;
       const gglUrl=`https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
       const fallback=v&&v!=='💳'?v:'$';
       return`<div style="width:${size}px;height:${size}px;border-radius:${r}px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
         <img src="${clrUrl}" style="width:${size}px;height:${size}px;object-fit:contain"
-          onerror="this.src='${gglUrl}';this.onerror=function(){this.parentNode.style.background='var(--bg3)';this.parentNode.innerHTML='<div style=\'width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.5)}px\'>${fallback}</div>';}"
+          onerror="if(this.src.indexOf('logo.dev')>-1){this.src='https://www.google.com/s2/favicons?domain=${domain}&sz=128';}else if(this.src.indexOf('google')>-1){this.src='https://logo.clearbit.com/${domain}';}else{this.parentNode.style.background='var(--bg3)';this.parentNode.innerHTML='<div style=\'width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.5)}px\'>${fallback}</div>';}""
           alt="${domain}">
       </div>`;
     } catch(e){}
