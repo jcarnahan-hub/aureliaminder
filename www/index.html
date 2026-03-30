@@ -906,6 +906,62 @@ function setSort(s,btn){
 //  BRAND LOGO SYSTEM
 // ══════════════════════════════════════════
 const BRAND_MAP={
+
+  'affirm':{name:'Affirm',domain:'affirm.com'},
+  'bagsmart':{name:'Bagsmart',domain:'bagsmart.com'},
+  'fetch':{name:'Fetch',domain:'fetchrewards.com'},
+  'fetch pet':{name:'Fetch Pet',domain:'fetchpet.com'},
+  'carecredit':{name:'CareCredit',domain:'carecredit.com'},
+  'care credit':{name:'CareCredit',domain:'carecredit.com'},
+  'florida city gas':{name:'Florida City Gas',domain:'floridacitygas.com'},
+  'hulu':{name:'Hulu',domain:'hulu.com'},
+  'espn':{name:'ESPN+',domain:'espnplus.com'},
+  'espn+':{name:'ESPN+',domain:'espnplus.com'},
+  'hulu disney espn':{name:'Hulu/Disney+/ESPN+',domain:'hulu.com'},
+  'carrington':{name:'Carrington Mortgage',domain:'carringtonms.com'},
+  'carrington mortgage':{name:'Carrington Mortgage',domain:'carringtonms.com'},
+  'fpl':{name:'FPL',domain:'fpl.com'},
+  'florida power':{name:'FPL',domain:'fpl.com'},
+  'duke energy':{name:'Duke Energy',domain:'duke-energy.com'},
+  'peoples gas':{name:'Peoples Gas',domain:'peoplesgas.com'},
+  'comcast':{name:'Comcast',domain:'comcast.com'},
+  'capital one':{name:'Capital One',domain:'capitalone.com'},
+  'chase':{name:'Chase',domain:'chase.com'},
+  'bank of america':{name:'Bank of America',domain:'bankofamerica.com'},
+  'wells fargo':{name:'Wells Fargo',domain:'wellsfargo.com'},
+  'discover':{name:'Discover',domain:'discover.com'},
+  'citi':{name:'Citi',domain:'citi.com'},
+  'synchrony':{name:'Synchrony',domain:'synchrony.com'},
+  'apple card':{name:'Apple Card',domain:'apple.com'},
+  'american express':{name:'Amex',domain:'americanexpress.com'},
+  'amex':{name:'Amex',domain:'americanexpress.com'},
+  'rent':{name:'Rent',domain:'apartments.com'},
+  'mortgage':{name:'Mortgage',domain:'mortgagecalculator.org'},
+  'planet fitness':{name:'Planet Fitness',domain:'planetfitness.com'},
+  'la fitness':{name:'LA Fitness',domain:'lafitness.com'},
+  'anytime fitness':{name:'Anytime Fitness',domain:'anytimefitness.com'},
+  'ymca':{name:'YMCA',domain:'ymca.net'},
+  'progressive':{name:'Progressive',domain:'progressive.com'},
+  'geico':{name:'GEICO',domain:'geico.com'},
+  'state farm':{name:'State Farm',domain:'statefarm.com'},
+  'allstate':{name:'Allstate',domain:'allstate.com'},
+  'usaa':{name:'USAA',domain:'usaa.com'},
+  'aetna':{name:'Aetna',domain:'aetna.com'},
+  'bluecross':{name:'Blue Cross',domain:'bcbs.com'},
+  'blue cross':{name:'Blue Cross',domain:'bcbs.com'},
+  'cigna':{name:'Cigna',domain:'cigna.com'},
+  'humana':{name:'Humana',domain:'humana.com'},
+  'united health':{name:'UnitedHealth',domain:'unitedhealthcare.com'},
+  'amazon prime':{name:'Amazon Prime',domain:'amazon.com'},
+  'whole foods':{name:'Whole Foods',domain:'wholefoodsmarket.com'},
+  'walmart+':{name:'Walmart+',domain:'walmart.com'},
+  'sam\'s club':{name:'Sam\'s Club',domain:'samsclub.com'},
+  'sams club':{name:'Sam\'s Club',domain:'samsclub.com'},
+  'costco':{name:'Costco',domain:'costco.com'},
+  'student loan':{name:'Student Loan',domain:'studentaid.gov'},
+  'sallie mae':{name:'Sallie Mae',domain:'salliemae.com'},
+  'navient':{name:'Navient',domain:'navient.com'},
+  'mohela':{name:'MOHELA',domain:'mohela.com'},
   'netflix':{name:'Netflix',domain:'netflix.com'},'hulu':{name:'Hulu',domain:'hulu.com'},
   'disney+':{name:'Disney+',domain:'disneyplus.com'},'disney':{name:'Disney+',domain:'disneyplus.com'},
   'hbo':{name:'HBO Max',domain:'max.com'},'max':{name:'Max',domain:'max.com'},
@@ -957,8 +1013,11 @@ const BRAND_MAP={
   'apple arcade':{name:'Apple Arcade',domain:'apple.com'},'apple fitness':{name:'Apple Fitness+',domain:'apple.com'},
 };
 
-function brandLogoUrl(d){ return`https://www.google.com/s2/favicons?domain=${d}&sz=128`; }
-function currentIcon(){ return selBrandDomain?`__brand__${selBrandDomain}__${selBrandName}`:selEmoji; }
+function brandLogoUrl(d){ return`https://img.logo.dev/${d}?token=pk_X-1ZO13GSgeOoUrIuJ6BeQ`; }
+function brandLogoUrlFallback(d){ return`https://www.google.com/s2/favicons?domain=${d}&sz=128`; }
+function brandLogoUrlFallback2(d){ return`https://logo.clearbit.com/${d}`; }
+
+// Smart renderIcon with Clearbit primary + Google favicon fallback
 function renderIcon(v,size=42){
   const r=Math.round(size*.26);
   if(!v||(!v.startsWith('__brand__')&&!v.trim()))
@@ -966,10 +1025,17 @@ function renderIcon(v,size=42){
   if(v.startsWith('__brand__')){
     const pts=v.split('__').filter(Boolean);
     const dom=pts[1],nm=pts[2]||'';
-    return`<div style="width:${size}px;height:${size}px;border-radius:${r}px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0"><img src="${brandLogoUrl(dom)}" style="width:${size}px;height:${size}px;object-fit:contain" onerror="this.parentNode.innerHTML='<span style=\\'font-size:${Math.round(size*.5)}px\\'>${nm||'🏢'}</span>'" alt="${nm}"></div>`;
+    const clrUrl=brandLogoUrl(dom);
+    const gglUrl=brandLogoUrlFallback(dom);
+    return`<div style="width:${size}px;height:${size}px;border-radius:${r}px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="${clrUrl}" style="width:${size}px;height:${size}px;object-fit:contain"
+        onerror="if(this.src.indexOf('logo.dev')>-1){this.src='${gglUrl}';}else if(this.src.indexOf('google')>-1){this.src='https://logo.clearbit.com/${dom}';}else{this.parentNode.style.background='var(--bg3)';this.parentNode.innerHTML='<div style=\'width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.4)}px;font-weight:700;color:var(--accent)\'>'+(nm?nm[0].toUpperCase():'$')+'</div>';}""
+        alt="${nm}">
+    </div>`;
   }
   return`<div style="width:${size}px;height:${size}px;border-radius:${r}px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.5)}px;flex-shrink:0">${v}</div>`;
 }
+function currentIcon(){ return selBrandDomain?`__brand__${selBrandDomain}__${selBrandName}`:selEmoji; }
 
 function detectBrand(name){
   if(!name)return null;
@@ -1150,7 +1216,7 @@ function openDetail(id){
     <div>${v.prepaid?`<span class="badge b-prepaid">Pre-paid ${fmtDate(v.prepaidDate)}</span>`:v.paid?`<span class="badge b-paid">Paid ${fmtDate(v.paidDate)}</span>`:`<span class="badge b-closed">Unpaid</span>`}</div>
   </div>`).join('')}`:'';
   document.getElementById('detail-body').innerHTML=`
-    <div class="dico-row">${renderIcon(b.icon,68)}<div class="dname">${b.name}</div><div class="dfreq">${b.freq} · ${fmtM(b.amount)}</div><div style="margin-top:6px">${sb}</div>${b.endDate?renderCountdownBadge(b):''}</div>
+    <div class="dico-row">${renderIconWithUrl(b.icon,b.url,68)}<div class="dname">${b.name}</div><div class="dfreq">${b.freq} · ${fmtM(b.amount)}</div><div style="margin-top:6px">${sb}</div>${b.endDate?renderCountdownBadge(b):''}</div>
     <div style="padding-bottom:8px">
       <div class="dr"><span class="dr-lbl">Start date</span><span class="dr-val">${fmtDate(b.startDate)}</span></div>
       <div class="dr"><span class="dr-lbl">End date</span><span class="dr-val">${b.endDate?fmtDate(b.endDate):'Ongoing'}</span></div>
@@ -1241,6 +1307,30 @@ function renderNotifBanners(){
   if(alerts.length>3) container.innerHTML+=`<div style="font-size:12px;color:var(--text2);text-align:center;padding:6px 0">${alerts.length-3} more reminder${alerts.length-3!==1?'s':''}</div>`;
 }
 
+
+// Render icon with URL fallback - uses bill's website domain if no brand logo set
+function renderIconWithUrl(v,url,size=42){
+  // If it's already a brand logo, use it
+  if(v && v.startsWith('__brand__')) return renderIcon(v,size);
+  // If it's an emoji and we have a URL, try to get logo from URL domain
+  if(url && url.trim()){
+    try {
+      const domain = new URL(url.trim()).hostname.replace('www.','');
+      const r=Math.round(size*.26);
+      const clrUrl=`https://img.logo.dev/${domain}?token=pk_X-1ZO13GSgeOoUrIuJ6BeQ`;
+      const gglUrl=`https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+      const fallback=v&&v!=='💳'?v:'$';
+      return`<div style="width:${size}px;height:${size}px;border-radius:${r}px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <img src="${clrUrl}" style="width:${size}px;height:${size}px;object-fit:contain"
+          onerror="if(this.src.indexOf('logo.dev')>-1){this.src='https://www.google.com/s2/favicons?domain=${domain}&sz=128';}else if(this.src.indexOf('google')>-1){this.src='https://logo.clearbit.com/${domain}';}else{this.parentNode.style.background='var(--bg3)';this.parentNode.innerHTML='<div style=\'width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.5)}px\'>${fallback}</div>';}""
+          alt="${domain}">
+      </div>`;
+    } catch(e){}
+  }
+  // Fall back to regular renderIcon
+  return renderIcon(v,size);
+}
+
 // ══════════════════════════════════════════
 //  BILL LIST
 // ══════════════════════════════════════════
@@ -1329,7 +1419,7 @@ function renderCalendar(){
   document.getElementById('cal-days').innerHTML=html;
   const mb=bills.filter(b=>isActiveIn(b,calYear,calMonth)).sort((a,b_)=>new Date(dueDateFor(a,calYear,calMonth))-new Date(dueDateFor(b_,calYear,calMonth)));
   if(!mb.length){document.getElementById('cal-bill-list').innerHTML=`<div class="empty" style="padding:24px"><div class="empty-t">No bills this month</div></div>`;return;}
-  document.getElementById('cal-bill-list').innerHTML=mb.map(b=>{const p=paymentThisMonth(b);const cls=p?.prepaid?'is-prepaid':p?.paid?'is-paid':isOverdue(b)?'is-overdue':'';const badge=p?.prepaid?`<span class="badge b-prepaid">Pre-paid</span>`:p?.paid?`<span class="badge b-paid">Paid</span>`:isOverdue(b)?`<span class="badge b-overdue">Overdue</span>`:'';return`<div class="bi ${cls}" onclick="openDetail(${b.id})">${renderIcon(b.icon,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">Due ${fmtDate(dueDateFor(b,calYear,calMonth))}</div></div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div></div></div>`;}).join('');
+  document.getElementById('cal-bill-list').innerHTML=mb.map(b=>{const p=paymentThisMonth(b);const cls=p?.prepaid?'is-prepaid':p?.paid?'is-paid':isOverdue(b)?'is-overdue':'';const badge=p?.prepaid?`<span class="badge b-prepaid">Pre-paid</span>`:p?.paid?`<span class="badge b-paid">Paid</span>`:isOverdue(b)?`<span class="badge b-overdue">Overdue</span>`:'';return`<div class="bi ${cls}" onclick="openDetail(${b.id})">${renderIconWithUrl(b.icon,b.url,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">Due ${fmtDate(dueDateFor(b,calYear,calMonth))}</div></div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div></div></div>`;}).join('');
 }
 function openCalDay(ds){
   const[y,m,d]=ds.split('-').map(Number);
