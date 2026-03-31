@@ -492,9 +492,9 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
         <div style="display:flex;align-items:center"><div class="sico" style="background:var(--accent-dim)">💰</div><div><div class="slbl">Monthly salary</div><div class="ssub" id="s-salary-lbl">Not set</div></div></div>
         <span class="chev">›</span>
       </div>
-      <div class="srow" onclick="openPayDate()">
+      <div class="srow" onclick="openPayDate()" style="display:none">
         <div style="display:flex;align-items:center"><div class="sico" style="background:var(--info-dim)">📅</div><div><div class="slbl">Next pay date</div><div class="ssub" id="s-paydate-lbl">Not set</div></div></div>
-        <span class="chev">›</span>
+      </div>
       <div class="srow" onclick="openExtraIncome()">
         <div style="display:flex;align-items:center"><div class="sico" style="background:rgba(139,92,246,.15)">➕</div><div><div class="slbl">Additional income</div><div class="ssub" id="s-extra-income-lbl">Not set</div></div></div>
         <span class="chev">›</span>
@@ -549,7 +549,7 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
     </div>
 
     <div style="text-align:center;padding:20px 0 4px;color:var(--text3);font-size:11px">
-      <em style="font-style:italic;font-size:12px;color:var(--accent)">"Simply Structured, Beautifully Planned."</em><br><span style="opacity:.6;font-size:10px">Where organization meets inspiration.</span><br><span style="opacity:.5;font-size:10px;margin-top:4px;display:block">AureliaEchoes · AureliaInk · AureliaMinder</span>
+      <em style="font-style:italic;font-size:12px;color:#5eead4;text-shadow:0 0 8px rgba(94,234,212,.3)">"Simply Structured, Beautifully Planned."</em><br><span style="font-size:10px;color:var(--text2)">Where organization meets inspiration.</span><br><span style="font-size:10px;margin-top:4px;display:block;color:var(--text2)">AureliaEchoes · AureliaInk · AureliaMinder</span>
     </div>
   </div>
 </div>
@@ -769,6 +769,7 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
       <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Add any regular income beyond your main salary — VA benefits, side income, child support, etc.</p>
       <div id="extra-income-list"></div>
       <button class="btn btn-ghost btn-full" onclick="addExtraIncomeRow()" style="margin-top:10px">+ Add income source</button>
+      <p style="font-size:11px;color:var(--text2);margin-top:8px">Each source can have its own pay date for planning purposes.</p>
       <div style="margin-top:16px">
         <button class="btn btn-accent btn-full" onclick="saveExtraIncome()">Save</button>
       </div>
@@ -1890,7 +1891,7 @@ window.renderSettingsUI = function renderSettingsUI(){
   if(extraEl){
     const sources=cfg.extraIncome||[];
     if(!sources.length) extraEl.textContent='Not set';
-    else if(sources.length===1) extraEl.textContent=sources[0].desc+': '+fmtM2(sources[0].amount)+'/mo';
+    else if(sources.length===1) extraEl.textContent=sources[0].desc+': '+fmtM2(sources[0].amount)+'/mo'+(sources[0].payDay?' · day '+sources[0].payDay:'');
     else extraEl.textContent=sources.length+' sources · '+fmtM2(getTotalExtraIncome())+'/mo total';
   }
   document.getElementById('s-notif').checked=cfg.notif!==false;
@@ -1899,10 +1900,12 @@ window.renderSettingsUI = function renderSettingsUI(){
   document.getElementById('s-default-notify').value=cfg.defaultNotify||'1 day before';
   document.getElementById('s-dark').checked=cfg.theme==='dark';
 }
-function openSalary(){document.getElementById('sal-input').value=cfg.salary||'';openSheet('salary-sheet');}
+function openSalary(){document.getElementById('sal-input').value=cfg.salary||'';var pdEl=document.getElementById('sal-paydate-input');if(pdEl)pdEl.value=cfg.payDate||'';openSheet('salary-sheet');}
 function saveSalary(){
   var val = parseFloat(document.getElementById('sal-input').value)||0;
+  var pd = document.getElementById('sal-paydate-input').value||'';
   window.cfg.salary = val;
+  if(pd) window.cfg.payDate = pd;
   cfg = window.cfg;
   localStorage.setItem('am-cfg',JSON.stringify(cfg));
   saveCfgToFirestore();
@@ -2224,7 +2227,8 @@ function saveExtraIncome(){
   const sources = cfg.extraIncome || [];
   const saved = sources.map((s,i)=>({
     desc: document.getElementById('ei-desc-'+i)?.value.trim()||'',
-    amount: parseFloat(document.getElementById('ei-amt-'+i)?.value)||0
+    amount: parseFloat(document.getElementById('ei-amt-'+i)?.value)||0,
+    payDay: parseInt(document.getElementById('ei-day-'+i)?.value)||null
   })).filter(s=>s.desc||s.amount>0);
   window.cfg.extraIncome = saved;
   cfg = window.cfg;
