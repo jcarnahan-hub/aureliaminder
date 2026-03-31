@@ -755,8 +755,8 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
 // ══════════════════════════════════════════
 window.bills = JSON.parse(localStorage.getItem('am-bills') || '[]');
 window.cfg = JSON.parse(localStorage.getItem('am-cfg') || '{"salary":0,"payDate":"","notif":true,"weekly":true,"notifUntil":false,"defaultNotify":"1 day before","theme":"dark"}');
-let bills = window.bills;
-let cfg = window.cfg;
+var bills = window.bills;
+var cfg = window.cfg;
 let editId=null, payingId=null, selBrandDomain='', selBrandName='', selEmoji='💳', iconMode='brand';
 let filter='active', sortMode=localStorage.getItem('am-sort')||'default', calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
 let dragSrcId=null, customOrder=JSON.parse(localStorage.getItem('am-order')||'[]');
@@ -1390,6 +1390,7 @@ function renderIconWithUrl(v,url,size=42){
 //  BILL LIST
 // ══════════════════════════════════════════
 function renderBillList(){
+  bills = window.bills; // always sync
   const n=new Date();
   const activeBills=bills.filter(b=>isActiveIn(b,n.getFullYear(),n.getMonth()));
   const closedBills=bills.filter(b=>isClosed(b));
@@ -1911,6 +1912,7 @@ function dragDrop(e, targetId){
 //  MASTER RENDER
 // ══════════════════════════════════════════
 window.render = function render(){
+  bills = window.bills; cfg = window.cfg; // sync before render
   renderBillList();
   renderNotifBanners();
   if(document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
