@@ -1071,6 +1071,7 @@ const BRAND_MAP={
 
 function brandLogoUrl(d){ return`https://www.google.com/s2/favicons?domain=${d}&sz=128`; }
 function brandLogoUrlHQ(d){ return`https://logo.clearbit.com/${d}`; }
+function brandLogoUrlFallback(d){ return brandLogoUrlHQ(d); }
 
 // Smart renderIcon with Clearbit primary + Google favicon fallback
 function renderIcon(v,size=42){
