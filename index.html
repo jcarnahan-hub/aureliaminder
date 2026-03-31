@@ -1865,7 +1865,7 @@ function loadPlannerFromFirestore(uid){
         if(snap.exists){
           plannerData = Object.assign({paydays:[],assignments:{},notes:''}, snap.data());
           localStorage.setItem('am-planner', JSON.stringify(plannerData));
-          if(p==='planner'){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
+          if(document.getElementById('page-planner').classList.contains('active')){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
         }
       }).catch(e=>console.error('Load planner error:',e));
   }catch(e){}
@@ -1922,7 +1922,7 @@ window.render = function render(){
   renderNotifBanners();
   if(document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
   if(document.getElementById('page-insights').classList.contains('active')) renderInsights();
-  if(p==='planner'){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
+  if(document.getElementById('page-planner').classList.contains('active')){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
 }
 
 // ══════════════════════════════════════════
@@ -2051,7 +2051,7 @@ window.addEventListener('load', () => {
         window.renderSettingsUI();
         window.applyTheme(window.cfg.theme||'dark');
         window.render();
-        if(p==='planner'){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
+        if(document.getElementById('page-planner').classList.contains('active')){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
       } catch(e){ console.error('Load error:',e); window.render(); }
 
       // Process any pending saves
@@ -2068,7 +2068,7 @@ window.addEventListener('load', () => {
               bills = window.bills;
               localStorage.setItem('am-bills', JSON.stringify(window.bills));
               window.render();
-              if(p==='planner'){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
+              if(document.getElementById('page-planner').classList.contains('active')){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
             }
           }
         }, function(e){ console.error('Snapshot error:',e); });
