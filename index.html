@@ -1528,6 +1528,7 @@ function switchInsTab(tab,btn){
 }
 
 function renderInsights(){
+  cfg = window.cfg; bills = window.bills; // always sync
   const now=new Date(); const y=now.getFullYear(),m=now.getMonth();
   document.getElementById('ins-month-lbl').textContent=now.toLocaleString('default',{month:'long',year:'numeric'});
   renderOverview(y,m,now);
@@ -1541,9 +1542,9 @@ function renderOverview(y,m,now){
   const paidBills=insBills.filter(b=>{const p=paymentThisMonth(b);return p&&(p.paid||p.prepaid);});
   const paidAmt=paidBills.reduce((s,b)=>s+b.amount,0);
   const remaining=total-paidAmt,paidCt=paidBills.length,unpaidCt=insBills.length-paidCt;
-  const sal=cfg.salary||0,spendable=sal-total,pct=sal>0?Math.round((total/sal)*100):0;
+  cfg=window.cfg; const sal=cfg.salary||0,spendable=sal-total,pct=sal>0?Math.round((total/sal)*100):0;
   const pc=pct>=90?'var(--danger)':pct>=70?'var(--warn)':'var(--accent)';
-  const pd=cfg.payDate; let payHtml='<span onclick="openPayDate()" style="color:var(--accent);cursor:pointer;font-size:12px">Tap to set ›</span>';
+  const pd=cfg.payDate; let payHtml='<div onclick="openPayDate()" style="color:var(--accent);cursor:pointer;font-size:13px;font-weight:600">Tap to set ✏️</div>';
   if(pd){const pdd=new Date(pd+'T12:00'),tod=today();const du=Math.ceil((pdd-tod)/864e5);payHtml=du>0?`${fmtDate(pd)}<br><small style="color:var(--text2);font-size:10px">in ${du} day${du!==1?'s':''}</small>`:du===0?`<span style="color:var(--accent)">${fmtDate(pd)}<br><small>Today!</small></span>`:fmtDate(pd);}
   const upcoming7=insBills.filter(b=>{const p=paymentThisMonth(b);if(p&&(p.paid||p.prepaid))return false;const d=daysUntilDue(b);return d>=0&&d<=7;}).sort((a,b_)=>daysUntilDue(a)-daysUntilDue(b_));
   document.getElementById('ins-overview').innerHTML=`
@@ -1557,7 +1558,7 @@ function renderOverview(y,m,now){
       <div class="ic"><div class="ic-lbl">Paid so far</div><div class="ic-val" style="color:var(--accent)">${fmtM(paidAmt)}</div><div class="ic-sub">${paidCt} of ${insBills.length}</div></div>
     </div>
     <div class="ins-grid">
-      <div class="ic"><div class="ic-lbl">Spendable</div><div class="ic-val" style="color:${spendable>=0?'var(--info)':'var(--danger)'};font-size:${sal?'20px':'14px'}">${sal?(spendable<0?'-':'')+fmtM(Math.abs(spendable)):'Set salary ↗'}</div><div class="ic-sub">${sal?'after all bills':'Tap ⚙ Pay'}</div></div>
+      <div class="ic" onclick="openSalary()" style="cursor:pointer"><div class="ic-lbl">Spendable <span style="font-size:9px;color:var(--accent)">✏️</span></div><div class="ic-val" style="color:${spendable>=0?'var(--info)':'var(--danger)'};font-size:${sal?'20px':'14px'}">${sal?(spendable<0?'-':'')+fmtM(Math.abs(spendable)):'Tap to set'}</div><div class="ic-sub">${sal?'after all bills':'Set monthly salary'}</div></div>
       <div class="ic"><div class="ic-lbl">Next pay date</div><div class="ic-val" style="font-size:14px;color:var(--info)">${payHtml}</div></div>
     </div>
     ${sal?`<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px"><span style="font-size:13px;color:var(--text2);font-weight:500">Bills as % of income</span><span style="font-size:16px;font-weight:700;font-family:var(--mono);color:${pc}">${pct}%</span></div><div class="prog-wrap"><div class="prog" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><div style="font-size:11px;color:var(--text2);margin-top:6px">${fmtM(total)} of ${fmtM(sal)} monthly income</div></div>`:''}
@@ -1667,6 +1668,7 @@ function renderCharts(){
 //  SETTINGS
 // ══════════════════════════════════════════
 window.renderSettingsUI = function renderSettingsUI(){
+  cfg = window.cfg; // always sync
   const fmtM2=n=>n?'$'+n.toLocaleString('en-US',{minimumFractionDigits:2}):'Not set';
   const fmtD=d=>{if(!d)return'Not set';const[y,m,dd]=d.split('-');return`${m}/${dd}/${y}`;};
   document.getElementById('s-salary-lbl').textContent=fmtM2(cfg.salary);
@@ -1678,9 +1680,25 @@ window.renderSettingsUI = function renderSettingsUI(){
   document.getElementById('s-dark').checked=cfg.theme==='dark';
 }
 function openSalary(){document.getElementById('sal-input').value=cfg.salary||'';openSheet('salary-sheet');}
-function saveSalary(){cfg=window.cfg;cfg.salary=parseFloat(document.getElementById('sal-input').value)||0;window.cfg=cfg;localStorage.setItem('am-cfg',JSON.stringify(cfg));saveCfgToFirestore();renderSettingsUI();closeSheet('salary-sheet');renderInsights();renderPlannerPaychecks();}
+function saveSalary(){
+  var val = parseFloat(document.getElementById('sal-input').value)||0;
+  window.cfg.salary = val;
+  cfg = window.cfg;
+  localStorage.setItem('am-cfg',JSON.stringify(cfg));
+  saveCfgToFirestore();
+  closeSheet('salary-sheet');
+  setTimeout(function(){ window.renderSettingsUI(); renderInsights(); renderPlannerPaychecks(); }, 50);
+}
 function openPayDate(){document.getElementById('pd-input').value=cfg.payDate||'';openSheet('paydate-sheet');}
-function savePayDate(){cfg=window.cfg;cfg.payDate=document.getElementById('pd-input').value||'';window.cfg=cfg;localStorage.setItem('am-cfg',JSON.stringify(cfg));saveCfgToFirestore();renderSettingsUI();closeSheet('paydate-sheet');renderInsights();}
+function savePayDate(){
+  var val = document.getElementById('pd-input').value||'';
+  window.cfg.payDate = val;
+  cfg = window.cfg;
+  localStorage.setItem('am-cfg',JSON.stringify(cfg));
+  saveCfgToFirestore();
+  closeSheet('paydate-sheet');
+  setTimeout(function(){ window.renderSettingsUI(); renderInsights(); }, 50);
+}
 
 // ══════════════════════════════════════════
 //  PRINT
