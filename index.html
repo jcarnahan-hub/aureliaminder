@@ -2065,6 +2065,7 @@ window.addEventListener('load', () => {
           localStorage.setItem('am-bills', JSON.stringify(window.bills));
           console.log('✅ Loaded from Firestore, count:', bills.length);
         loadPlannerFromFirestore(user.uid);
+        setTimeout(function(){ bills=window.bills; renderPlannerPaychecks(); renderPlannerUnassigned(); }, 500);
         } else { console.log('No bills in Firestore yet'); }
         const cfgSnap = await db.collection('users').doc(user.uid).collection('data').doc('config').get();
         if(cfgSnap.exists){
