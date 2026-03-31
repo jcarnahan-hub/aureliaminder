@@ -446,7 +446,13 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
 
     <!-- Unassigned bills -->
     <div class="card" style="margin-bottom:14px">
-      <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Unassigned Bills</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px">Unassigned Bills</div>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--text2)">
+          <input type="checkbox" id="planner-next-month" onchange="renderPlannerUnassigned()" style="accent-color:var(--accent)">
+          Include next month
+        </label>
+      </div>
       <div id="planner-unassigned" style="display:flex;flex-direction:column;gap:6px;min-height:40px">
         <div style="font-size:12px;color:var(--text2);text-align:center;padding:8px">All bills assigned! ✅</div>
       </div>
@@ -806,7 +812,7 @@ function saveBills(){
   } catch(e){ console.log('Firebase not ready yet, saved locally only'); }
 }
 function saveCfg(){
-  window.cfg = cfg;
+  cfg = window.cfg;
   cfg.notif        = document.getElementById('s-notif').checked;
   cfg.notifUntil   = document.getElementById('s-notif-until').checked;
   cfg.weekly       = document.getElementById('s-weekly').checked;
@@ -1537,7 +1543,7 @@ function renderOverview(y,m,now){
   const remaining=total-paidAmt,paidCt=paidBills.length,unpaidCt=insBills.length-paidCt;
   const sal=cfg.salary||0,spendable=sal-total,pct=sal>0?Math.round((total/sal)*100):0;
   const pc=pct>=90?'var(--danger)':pct>=70?'var(--warn)':'var(--accent)';
-  const pd=cfg.payDate; let payHtml='—';
+  const pd=cfg.payDate; let payHtml='<span onclick="openPayDate()" style="color:var(--accent);cursor:pointer;font-size:12px">Tap to set ›</span>';
   if(pd){const pdd=new Date(pd+'T12:00'),tod=today();const du=Math.ceil((pdd-tod)/864e5);payHtml=du>0?`${fmtDate(pd)}<br><small style="color:var(--text2);font-size:10px">in ${du} day${du!==1?'s':''}</small>`:du===0?`<span style="color:var(--accent)">${fmtDate(pd)}<br><small>Today!</small></span>`:fmtDate(pd);}
   const upcoming7=insBills.filter(b=>{const p=paymentThisMonth(b);if(p&&(p.paid||p.prepaid))return false;const d=daysUntilDue(b);return d>=0&&d<=7;}).sort((a,b_)=>daysUntilDue(a)-daysUntilDue(b_));
   document.getElementById('ins-overview').innerHTML=`
@@ -1672,9 +1678,9 @@ window.renderSettingsUI = function renderSettingsUI(){
   document.getElementById('s-dark').checked=cfg.theme==='dark';
 }
 function openSalary(){document.getElementById('sal-input').value=cfg.salary||'';openSheet('salary-sheet');}
-function saveSalary(){cfg.salary=parseFloat(document.getElementById('sal-input').value)||0;localStorage.setItem('am-cfg',JSON.stringify(cfg));renderSettingsUI();closeSheet('salary-sheet');if(document.getElementById('page-insights').classList.contains('active'))renderInsights();}
+function saveSalary(){cfg=window.cfg;cfg.salary=parseFloat(document.getElementById('sal-input').value)||0;window.cfg=cfg;localStorage.setItem('am-cfg',JSON.stringify(cfg));saveCfgToFirestore();renderSettingsUI();closeSheet('salary-sheet');if(document.getElementById('page-insights').classList.contains('active'))renderInsights();}
 function openPayDate(){document.getElementById('pd-input').value=cfg.payDate||'';openSheet('paydate-sheet');}
-function savePayDate(){cfg.payDate=document.getElementById('pd-input').value||'';localStorage.setItem('am-cfg',JSON.stringify(cfg));renderSettingsUI();closeSheet('paydate-sheet');if(document.getElementById('page-insights').classList.contains('active'))renderInsights();}
+function savePayDate(){cfg=window.cfg;cfg.payDate=document.getElementById('pd-input').value||'';window.cfg=cfg;localStorage.setItem('am-cfg',JSON.stringify(cfg));saveCfgToFirestore();renderSettingsUI();closeSheet('paydate-sheet');if(document.getElementById('page-insights').classList.contains('active'))renderInsights();}
 
 // ══════════════════════════════════════════
 //  PRINT
@@ -1845,7 +1851,16 @@ function renderPlannerUnassigned(){
   const n=new Date(); const y=n.getFullYear(); const m=n.getMonth();
   bills = window.bills; // always sync
   const allAssigned = Object.values(plannerData.assignments||{}).flat();
-  const activeBills = (bills||[]).filter(b=>!isClosed(b));
+  const includeNext = document.getElementById('planner-next-month')?.checked || false;
+  // Get next month dates
+  const nextY = m===11 ? y+1 : y;
+  const nextM = m===11 ? 0 : m+1;
+  const activeBills = (bills||[]).filter(b=>{
+    if(isClosed(b)) return false;
+    if(isActiveIn(b,y,m)) return true;
+    if(includeNext && isActiveIn(b,nextY,nextM)) return true;
+    return false;
+  });
   console.log('Planner unassigned check - total bills:', bills.length, 'allAssigned:', allAssigned.length);
   const unassigned  = activeBills.filter(b=>!allAssigned.includes(b.id));
   const paydays = getPlannerPaydays();
@@ -1854,6 +1869,7 @@ function renderPlannerUnassigned(){
     container.innerHTML=`<div style="font-size:12px;color:var(--accent);text-align:center;padding:8px">All bills assigned! ✅</div>`;
     return;
   }
+  const nextY2 = m===11 ? y+1 : y; const nextM2 = m===11 ? 0 : m+1;
   container.innerHTML = unassigned.map(b=>{
     const dueStr = dueDateFor(b,n.getFullYear(),n.getMonth());
     const paydayOptions = paydays.map(pd=>`<option value="${pd}">${new Date(pd+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</option>`).join('');
