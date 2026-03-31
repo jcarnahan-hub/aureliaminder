@@ -1890,7 +1890,11 @@ window.renderSettingsUI = function renderSettingsUI(){
   if(extraEl){
     const sources=cfg.extraIncome||[];
     if(!sources.length) extraEl.textContent='Not set';
-    else if(sources.length===1) extraEl.textContent=sources[0].desc+': '+fmtM2(sources[0].amount)+'/mo'+(sources[0].payDay?' · day '+sources[0].payDay:'');
+    else if(sources.length===1){
+    const pd=sources[0].payDay;
+    const pdStr=pd?(pd==='last'?' · last day of month':' · paid on the '+(pd===1?'1st':pd===2?'2nd':pd===3?'3rd':pd+'th')):'';
+    extraEl.textContent=sources[0].desc+': '+fmtM2(sources[0].amount)+'/mo'+pdStr;
+  }
     else extraEl.textContent=sources.length+' sources · '+fmtM2(getTotalExtraIncome())+'/mo total';
   }
   document.getElementById('s-notif').checked=cfg.notif!==false;
@@ -2194,16 +2198,30 @@ function renderExtraIncomeRows(){
     return;
   }
   container.innerHTML = sources.map((s,i)=>`
-    <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end;margin-bottom:10px" id="eir-${i}">
-      <div class="fg" style="margin:0">
+    <div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:10px" id="eir-${i}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--accent)">Income source ${i+1}</div>
+        <button onclick="removeExtraIncomeRow(${i})" style="background:var(--danger-dim);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--danger);font-size:13px">Remove</button>
+      </div>
+      <div class="fg" style="margin-bottom:8px">
         <label style="font-size:11px">Description</label>
-        <input type="text" id="ei-desc-${i}" value="${s.desc||''}" placeholder="e.g. VA Disability" style="background:var(--bg3)">
+        <input type="text" id="ei-desc-${i}" value="${s.desc||''}" placeholder="e.g. VA Disability, Side income..." style="background:var(--bg4)">
       </div>
-      <div class="fg" style="margin:0;width:100px">
-        <label style="font-size:11px">Amount ($)</label>
-        <input type="number" id="ei-amt-${i}" value="${s.amount||''}" placeholder="0.00" min="0" step="0.01" style="background:var(--bg3)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="fg" style="margin:0">
+          <label style="font-size:11px">Monthly amount ($)</label>
+          <input type="number" id="ei-amt-${i}" value="${s.amount||''}" placeholder="0.00" min="0" step="0.01" style="background:var(--bg4)">
+        </div>
+        <div class="fg" style="margin:0">
+          <label style="font-size:11px">Paid on day of month</label>
+          <select id="ei-day-${i}" style="background:var(--bg4);border:1px solid var(--border2);border-radius:var(--radius-xs);padding:10px 8px;font-size:13px;color:var(--text);font-family:var(--font);outline:none;width:100%">
+            <option value="">Select day...</option>
+            ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28].map(d=>`<option value="${d}" ${s.payDay===d?'selected':''}>${d}${d===1?'st':d===2?'nd':d===3?'rd':'th'}</option>`).join('')}
+            <option value="last" ${s.payDay==='last'?'selected':''}>Last day</option>
+          </select>
+        </div>
       </div>
-      <button onclick="removeExtraIncomeRow(${i})" style="background:var(--danger-dim);border:none;border-radius:8px;padding:10px;cursor:pointer;color:var(--danger);font-size:14px;margin-bottom:1px">×</button>
+      ${s.payDay?`<div style="margin-top:8px;font-size:11px;color:var(--accent)">💰 Expected around the ${typeof s.payDay==='number'?(s.payDay+(s.payDay===1?'st':s.payDay===2?'nd':s.payDay===3?'rd':'th')):s.payDay} of each month</div>`:''}
     </div>`).join('');
 }
 
@@ -2224,11 +2242,14 @@ function removeExtraIncomeRow(i){
 
 function saveExtraIncome(){
   const sources = cfg.extraIncome || [];
-  const saved = sources.map((s,i)=>({
-    desc: document.getElementById('ei-desc-'+i)?.value.trim()||'',
-    amount: parseFloat(document.getElementById('ei-amt-'+i)?.value)||0,
-    payDay: parseInt(document.getElementById('ei-day-'+i)?.value)||null
-  })).filter(s=>s.desc||s.amount>0);
+  const saved = sources.map((s,i)=>{
+    const dayVal = document.getElementById('ei-day-'+i)?.value;
+    return {
+      desc: document.getElementById('ei-desc-'+i)?.value.trim()||'',
+      amount: parseFloat(document.getElementById('ei-amt-'+i)?.value)||0,
+      payDay: dayVal==='last'?'last':(parseInt(dayVal)||null)
+    };
+  }).filter(s=>s.desc||s.amount>0);
   window.cfg.extraIncome = saved;
   cfg = window.cfg;
   localStorage.setItem('am-cfg',JSON.stringify(cfg));
