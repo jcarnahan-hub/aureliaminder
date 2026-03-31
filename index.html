@@ -410,6 +410,58 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
 </div>
 
 <!-- ══ SETTINGS PAGE ══ -->
+
+<!-- ══ PAYCHECK PLANNER PAGE ══ -->
+<div class="page" id="page-planner">
+  <div class="topbar">
+    <div><div class="logo"><span class="logo-aurelia">Aurelia</span><span class="logo-minder">Minder</span></div>
+    <div class="topbar-sub">Paycheck Planner</div>
+    <div class="tagline">Simply Structured, Beautifully Planned... Where organization meets inspiration!</div></div>
+    <div class="topbar-actions"><div id="user-avatar-planner"></div><button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">🌙</button></div>
+  </div>
+  <div style="padding:14px 16px 0">
+
+    <!-- Payday Calendar -->
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <button class="cal-nav" onclick="plannerCalPrev()">‹</button>
+        <div id="planner-cal-title" style="font-size:14px;font-weight:700"></div>
+        <button class="cal-nav" onclick="plannerCalNext()">›</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;margin-bottom:6px">
+        <div style="font-size:10px;color:var(--text3);font-weight:600">Su</div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600">Mo</div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600">Tu</div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600">We</div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600">Th</div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600">Fr</div>
+        <div style="font-size:10px;color:var(--text3);font-weight:600">Sa</div>
+      </div>
+      <div id="planner-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center"></div>
+      <div style="margin-top:8px;font-size:11px;color:var(--text2);text-align:center">Tap a date to mark/unmark as payday 💰</div>
+    </div>
+
+    <!-- Paycheck columns -->
+    <div id="planner-paychecks" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+
+    <!-- Unassigned bills -->
+    <div class="card" style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Unassigned Bills</div>
+      <div id="planner-unassigned" style="display:flex;flex-direction:column;gap:6px;min-height:40px">
+        <div style="font-size:12px;color:var(--text2);text-align:center;padding:8px">All bills assigned! ✅</div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card" style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Notes</div>
+      <textarea id="planner-notes" placeholder="Add notes about your budget, upcoming expenses, reminders..." 
+        style="width:100%;min-height:100px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px;color:var(--text);font-family:var(--font);font-size:13px;resize:vertical;outline:none;box-sizing:border-box"
+        oninput="savePlannerNotes()"></textarea>
+    </div>
+
+  </div>
+</div>
 <div class="page" id="page-settings">
   <div class="topbar">
     <div><div class="logo"><span class="logo-aurelia">Aurelia</span><span class="logo-minder">Minder</span></div><div class="topbar-sub">Settings</div>
@@ -505,6 +557,10 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
   <button class="nb" id="nb-insights" onclick="showPage('insights')">
     <svg viewBox="0 0 22 22" fill="none"><path d="M4 16l4-4 3 3 6-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="3" width="16" height="16" rx="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
     <span>Insights</span>
+  </button>
+  <button class="nb" id="nb-planner" onclick="showPage('planner')">
+    <svg viewBox="0 0 22 22" fill="none"><rect x="3" y="3" width="16" height="16" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 7h8M7 10.5h8M7 14h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="16" cy="16" r="3.5" fill="var(--accent)"/><path d="M14.5 16h3M16 14.5v3" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <span>Planner</span>
   </button>
   <button class="nb" id="nb-settings" onclick="showPage('settings')">
     <svg viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M11 3v2M11 17v2M3 11h2M17 11h2M5.64 5.64l1.42 1.42M14.94 14.94l1.42 1.42M5.64 16.36l1.42-1.42M14.94 7.06l1.42-1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -1013,9 +1069,8 @@ const BRAND_MAP={
   'apple arcade':{name:'Apple Arcade',domain:'apple.com'},'apple fitness':{name:'Apple Fitness+',domain:'apple.com'},
 };
 
-function brandLogoUrl(d){ return`https://img.logo.dev/${d}?token=pk_X-1ZO13GSgeOoUrIuJ6BeQ`; }
-function brandLogoUrlFallback(d){ return`https://www.google.com/s2/favicons?domain=${d}&sz=128`; }
-function brandLogoUrlFallback2(d){ return`https://logo.clearbit.com/${d}`; }
+function brandLogoUrl(d){ return`https://www.google.com/s2/favicons?domain=${d}&sz=128`; }
+function brandLogoUrlHQ(d){ return`https://logo.clearbit.com/${d}`; }
 
 // Smart renderIcon with Clearbit primary + Google favicon fallback
 function renderIcon(v,size=42){
@@ -1317,12 +1372,12 @@ function renderIconWithUrl(v,url,size=42){
     try {
       const domain = new URL(url.trim()).hostname.replace('www.','');
       const r=Math.round(size*.26);
-      const clrUrl=`https://img.logo.dev/${domain}?token=pk_X-1ZO13GSgeOoUrIuJ6BeQ`;
+      const clrUrl=`https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
       const gglUrl=`https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
       const fallback=v&&v!=='💳'?v:'$';
       return`<div style="width:${size}px;height:${size}px;border-radius:${r}px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
         <img src="${clrUrl}" style="width:${size}px;height:${size}px;object-fit:contain"
-          onerror="if(this.src.indexOf('logo.dev')>-1){this.src='https://www.google.com/s2/favicons?domain=${domain}&sz=128';}else if(this.src.indexOf('google')>-1){this.src='https://logo.clearbit.com/${domain}';}else{this.parentNode.style.background='var(--bg3)';this.parentNode.innerHTML='<div style=\'width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.5)}px\'>${fallback}</div>';}""
+          onerror="this.src='https://logo.clearbit.com/${domain}';this.onerror=function(){this.parentNode.style.background='var(--bg3)';this.parentNode.innerHTML='<div style=\'width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.5)}px\'>${fallback}</div>';}""
           alt="${domain}">
       </div>`;
     } catch(e){}
@@ -1636,6 +1691,180 @@ function handleImport(e){
 }
 
 
+
+// ══════════════════════════════════════════
+//  PAYCHECK PLANNER
+// ══════════════════════════════════════════
+let plannerYear  = new Date().getFullYear();
+let plannerMonth = new Date().getMonth();
+let plannerData  = JSON.parse(localStorage.getItem('am-planner') || '{"paydays":[],"assignments":{},"notes":""}');
+
+function savePlannerData(){
+  localStorage.setItem('am-planner', JSON.stringify(plannerData));
+  if(typeof saveToFirestore==='function'){
+    try{
+      var user = firebase.auth().currentUser;
+      if(user){
+        firebase.firestore().collection('users').doc(user.uid).collection('data').doc('planner')
+          .set(plannerData).catch(e=>console.error('Planner save error:',e));
+      }
+    }catch(e){}
+  }
+}
+
+function savePlannerNotes(){
+  plannerData.notes = document.getElementById('planner-notes').value;
+  savePlannerData();
+}
+
+function plannerCalPrev(){ plannerMonth--; if(plannerMonth<0){plannerMonth=11;plannerYear--;} renderPlannerCalendar(); }
+function plannerCalNext(){ plannerMonth++; if(plannerMonth>11){plannerMonth=0;plannerYear++;} renderPlannerCalendar(); }
+
+function togglePayday(dateStr){
+  const idx = plannerData.paydays.indexOf(dateStr);
+  if(idx>-1) plannerData.paydays.splice(idx,1);
+  else plannerData.paydays.push(dateStr);
+  plannerData.paydays.sort();
+  savePlannerData();
+  renderPlannerCalendar();
+  renderPlannerPaychecks();
+}
+
+function renderPlannerCalendar(){
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('planner-cal-title').textContent = months[plannerMonth]+' '+plannerYear;
+  const firstDay = new Date(plannerYear, plannerMonth, 1).getDay();
+  const daysInMonth = new Date(plannerYear, plannerMonth+1, 0).getDate();
+  const today = new Date().toISOString().split('T')[0];
+  let cells = '';
+  for(let i=0;i<firstDay;i++) cells+=`<div></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=`${plannerYear}-${String(plannerMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isPayday = plannerData.paydays.includes(ds);
+    const isToday  = ds===today;
+    cells+=`<div onclick="togglePayday('${ds}')" style="
+      cursor:pointer;padding:4px 2px;border-radius:6px;font-size:12px;position:relative;
+      background:${isPayday?'rgba(34,211,160,.15)':'transparent'};
+      color:${isToday?'var(--accent)':isPayday?'var(--accent)':'var(--text)'};
+      font-weight:${isToday||isPayday?'700':'400'};
+      border:${isToday?'1px solid var(--accent)':'1px solid transparent'};
+    ">${d}${isPayday?'<div style="font-size:8px;line-height:1">💰</div>':''}</div>`;
+  }
+  document.getElementById('planner-cal-grid').innerHTML = cells;
+}
+
+function getPlannerPaydays(){
+  const prefix=`${plannerYear}-${String(plannerMonth+1).padStart(2,'0')}`;
+  return plannerData.paydays.filter(d=>d.startsWith(prefix));
+}
+
+function assignBill(billId, paycheckDate){
+  if(!plannerData.assignments) plannerData.assignments={};
+  // Remove from any existing assignment
+  Object.keys(plannerData.assignments).forEach(k=>{
+    plannerData.assignments[k] = (plannerData.assignments[k]||[]).filter(id=>id!==billId);
+  });
+  if(paycheckDate){
+    if(!plannerData.assignments[paycheckDate]) plannerData.assignments[paycheckDate]=[];
+    plannerData.assignments[paycheckDate].push(billId);
+  }
+  savePlannerData();
+  renderPlannerPaychecks();
+  renderPlannerUnassigned();
+}
+
+function renderPlannerPaychecks(){
+  const paydays = getPlannerPaydays();
+  const salary  = cfg.salary || 0;
+  const container = document.getElementById('planner-paychecks');
+  if(!paydays.length){
+    container.innerHTML=`<div style="grid-column:span 2;text-align:center;padding:20px;color:var(--text2);font-size:13px">
+      Mark your paydays on the calendar above 💰
+    </div>`;
+    return;
+  }
+  const n=new Date(); const y=n.getFullYear(); const m=n.getMonth();
+  container.innerHTML = paydays.map(pd=>{
+    const assigned = (plannerData.assignments[pd]||[]);
+    const assignedBills = assigned.map(id=>bills.find(b=>b.id==id)).filter(Boolean);
+    const total = assignedBills.reduce((s,b)=>s+parseFloat(b.amount||0),0);
+    const remaining = salary - total;
+    const overBudget = salary>0 && remaining<0;
+    const dateLabel = new Date(pd+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const billRows = assignedBills.map(b=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+        ${renderIconWithUrl(b.icon,b.url,28)}
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.name}</div>
+        </div>
+        <div style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--danger)">-${fmtM(b.amount)}</div>
+        <button onclick="assignBill(${b.id},null)" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 2px" title="Remove">×</button>
+      </div>`).join('');
+    return`<div class="card" style="padding:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--accent)">💰 ${dateLabel}</div>
+          ${salary>0?`<div style="font-size:11px;color:var(--text2)">${fmtM(salary)} paycheck</div>`:''}
+        </div>
+        ${salary>0?`<div style="font-size:13px;font-weight:700;color:${overBudget?'var(--danger)':'var(--accent)'}">${overBudget?'Over by ':'Left: '}${fmtM(Math.abs(remaining))}</div>`:''}
+      </div>
+      ${billRows||`<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px">Drop bills here</div>`}
+      <div style="margin-top:8px;font-size:11px;font-weight:700;color:var(--text2);text-align:right">Bills: ${fmtM(total)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderPlannerUnassigned(){
+  const n=new Date(); const y=n.getFullYear(); const m=n.getMonth();
+  const allAssigned = Object.values(plannerData.assignments||{}).flat();
+  const activeBills = bills.filter(b=>!isClosed(b));
+  const unassigned  = activeBills.filter(b=>!allAssigned.includes(b.id));
+  const paydays = getPlannerPaydays();
+  const container = document.getElementById('planner-unassigned');
+  if(!unassigned.length){
+    container.innerHTML=`<div style="font-size:12px;color:var(--accent);text-align:center;padding:8px">All bills assigned! ✅</div>`;
+    return;
+  }
+  container.innerHTML = unassigned.map(b=>{
+    const dueStr = dueDateFor(b,n.getFullYear(),n.getMonth());
+    const paydayOptions = paydays.map(pd=>`<option value="${pd}">${new Date(pd+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</option>`).join('');
+    return`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:10px">
+      ${renderIconWithUrl(b.icon,b.url,32)}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.name}</div>
+        <div style="font-size:11px;color:var(--text2)">Due ${fmtDate(dueStr)} · ${fmtM(b.amount)}</div>
+      </div>
+      ${paydays.length?`<select onchange="if(this.value)assignBill(${b.id},this.value)" 
+        style="background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:4px 6px;font-size:11px;color:var(--text);font-family:var(--font);max-width:90px">
+        <option value="">Assign...</option>${paydayOptions}
+      </select>`:`<span style="font-size:11px;color:var(--text3)">Add payday first</span>`}
+    </div>`;
+  }).join('');
+}
+
+function renderPlanner(){
+  renderPlannerCalendar();
+  renderPlannerPaychecks();
+  renderPlannerUnassigned();
+  // Load notes
+  const notesEl = document.getElementById('planner-notes');
+  if(notesEl) notesEl.value = plannerData.notes||'';
+}
+
+// Load planner data from Firestore on auth
+function loadPlannerFromFirestore(uid){
+  try{
+    firebase.firestore().collection('users').doc(uid).collection('data').doc('planner')
+      .get().then(snap=>{
+        if(snap.exists){
+          plannerData = Object.assign({paydays:[],assignments:{},notes:''}, snap.data());
+          localStorage.setItem('am-planner', JSON.stringify(plannerData));
+          if(document.getElementById('page-planner').classList.contains('active')) renderPlanner();
+        }
+      }).catch(e=>console.error('Load planner error:',e));
+  }catch(e){}
+}
+
 // ══════════════════════════════════════════
 //  DRAG AND DROP
 // ══════════════════════════════════════════
@@ -1686,6 +1915,7 @@ window.render = function render(){
   renderNotifBanners();
   if(document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
   if(document.getElementById('page-insights').classList.contains('active')) renderInsights();
+  if(document.getElementById('page-planner').classList.contains('active')) renderPlanner();
 }
 
 // ══════════════════════════════════════════
@@ -1798,6 +2028,7 @@ window.addEventListener('load', () => {
           bills = window.bills;
           localStorage.setItem('am-bills', JSON.stringify(window.bills));
           console.log('✅ Loaded from Firestore, count:', bills.length);
+        loadPlannerFromFirestore(user.uid);
         }
         const cfgSnap = await db.collection('users').doc(user.uid).collection('data').doc('config').get();
         if(cfgSnap.exists){
