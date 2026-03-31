@@ -795,6 +795,18 @@ function applyThemeFromToggle(){ applyTheme(document.getElementById('s-dark').ch
 // ══════════════════════════════════════════
 //  PERSIST
 // ══════════════════════════════════════════
+function saveCfgToFirestore(){
+  try {
+    var user = firebase.auth().currentUser;
+    if(user){
+      firebase.firestore().collection('users').doc(user.uid).collection('data').doc('config')
+        .set(window.cfg)
+        .then(function(){ console.log('✅ Config saved to Firestore'); })
+        .catch(function(e){ console.error('Config save error:',e.message); });
+    }
+  } catch(e){ console.log('Firebase not ready for cfg save'); }
+}
+
 function saveBills(){ 
   window.bills = bills;
   localStorage.setItem('am-bills',JSON.stringify(bills));
@@ -1686,8 +1698,10 @@ function saveSalary(){
   cfg = window.cfg;
   localStorage.setItem('am-cfg',JSON.stringify(cfg));
   saveCfgToFirestore();
-  closeSheet('salary-sheet');
-  setTimeout(function(){ window.renderSettingsUI(); renderInsights(); renderPlannerPaychecks(); }, 50);
+  document.getElementById('salary-sheet').classList.remove('open');
+  window.renderSettingsUI();
+  renderInsights();
+  renderPlannerPaychecks();
 }
 function openPayDate(){document.getElementById('pd-input').value=cfg.payDate||'';openSheet('paydate-sheet');}
 function savePayDate(){
@@ -1696,8 +1710,9 @@ function savePayDate(){
   cfg = window.cfg;
   localStorage.setItem('am-cfg',JSON.stringify(cfg));
   saveCfgToFirestore();
-  closeSheet('paydate-sheet');
-  setTimeout(function(){ window.renderSettingsUI(); renderInsights(); }, 50);
+  document.getElementById('paydate-sheet').classList.remove('open');
+  window.renderSettingsUI();
+  renderInsights();
 }
 
 // ══════════════════════════════════════════
@@ -2106,6 +2121,7 @@ window.addEventListener('load', () => {
           window.cfg = Object.assign({}, window.cfg, cfgSnap.data());
           cfg = window.cfg;
           localStorage.setItem('am-cfg', JSON.stringify(window.cfg));
+          console.log('✅ Config loaded from Firestore, salary:', window.cfg.salary, 'payDate:', window.cfg.payDate);
         }
         window.renderSettingsUI();
         window.applyTheme(window.cfg.theme||'dark');
