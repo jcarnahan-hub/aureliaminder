@@ -2004,16 +2004,18 @@ window.addEventListener('load', () => {
     console.log('🔥 Firebase ready!');
 
     if(user){
-      // Update avatar
-      const el = document.getElementById('user-avatar');
-      if(el){
-        if(user.photoURL){
-          el.innerHTML = '<img src="'+user.photoURL+'" style="width:32px;height:32px;border-radius:50%;cursor:pointer;border:2px solid var(--accent)" onclick="signOutUser()" title="Sign out">';
-        } else {
-          const ini = (user.displayName||'?').split(' ').map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
-          el.innerHTML = '<div onclick="signOutUser()" style="width:32px;height:32px;border-radius:50%;background:var(--accent-dim);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;cursor:pointer;border:2px solid var(--accent)">'+ini+'</div>';
+      // Update avatar on all pages
+      ['user-avatar','user-avatar-planner'].forEach(function(avatarId){
+        const el = document.getElementById(avatarId);
+        if(el){
+          if(user.photoURL){
+            el.innerHTML = '<img src="'+user.photoURL+'" style="width:32px;height:32px;border-radius:50%;cursor:pointer;border:2px solid var(--accent)" onclick="signOutUser()" title="Sign out">';
+          } else {
+            const ini = (user.displayName||'?').split(' ').map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+            el.innerHTML = '<div onclick="signOutUser()" style="width:32px;height:32px;border-radius:50%;background:var(--accent-dim);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;cursor:pointer;border:2px solid var(--accent)">'+ini+'</div>';
+          }
         }
-      }
+      });
 
       // Hide login, show app
       document.getElementById('login-screen').style.display='none';
@@ -2029,7 +2031,7 @@ window.addEventListener('load', () => {
           localStorage.setItem('am-bills', JSON.stringify(window.bills));
           console.log('✅ Loaded from Firestore, count:', bills.length);
         loadPlannerFromFirestore(user.uid);
-        }
+        } else { console.log('No bills in Firestore yet'); }
         const cfgSnap = await db.collection('users').doc(user.uid).collection('data').doc('config').get();
         if(cfgSnap.exists){
           window.cfg = Object.assign({}, window.cfg, cfgSnap.data());
@@ -2049,9 +2051,14 @@ window.addEventListener('load', () => {
       db.collection('users').doc(user.uid).collection('data').doc('bills')
         .onSnapshot(function(snap){
           if(snap.exists && !snap.metadata.hasPendingWrites){
-            window.bills = snap.data().bills || [];
-            localStorage.setItem('am-bills', JSON.stringify(window.bills));
-            window.render();
+            var snapBills = snap.data().bills || [];
+            if(snapBills.length > 0 || bills.length === 0){
+              window.bills = snapBills;
+              bills = window.bills;
+              localStorage.setItem('am-bills', JSON.stringify(window.bills));
+              window.render();
+              if(document.getElementById('page-planner').classList.contains('active')) renderPlanner();
+            }
           }
         }, function(e){ console.error('Snapshot error:',e); });
 
