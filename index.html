@@ -684,6 +684,18 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
           <option value="other">📋 Other</option>
         </select>
       </div>
+      <div class="fg" style="margin-top:8px">
+        <label>Payment method <span style="color:var(--text3);font-size:10px">(optional)</span></label>
+        <select id="f-paymethod" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-xs);padding:10px 12px;font-size:13px;color:var(--text);font-family:var(--font);outline:none;width:100%">
+          <option value="">-- Select method --</option>
+          <option value="NO_AUTOPAY">🚫 No AutoPay</option>
+          <option value="CAP1_CH">💳 Cap.One Checking: AutoPay</option>
+          <option value="CHASE_CH">💳 Chase Checking: AutoPay</option>
+          <option value="SPCST_CH">💳 SpCst Checking: AutoPay</option>
+          <option value="SPCST_SL_SV">💳 SpCst S.L. Savings: AutoPay</option>
+        </select>
+      </div>
+
       <div id="credit-card-fields" style="display:none;background:var(--bg3);border-radius:10px;padding:12px;margin-top:4px">
         <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">💳 Credit Card Details <span style="color:var(--text3);font-weight:400;text-transform:none">(informational only)</span></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -1256,6 +1268,7 @@ function openEdit(id){
   document.getElementById('f-share').value=b.share||'';
   document.getElementById('f-category').value=b.category||'';
   toggleCreditFields();
+  const pmEl=document.getElementById('f-paymethod');if(pmEl)pmEl.value=b.payMethod||'';
   if(b.category==='creditcard'){
     document.getElementById('f-cc-balance').value=b.ccBalance||'';
     document.getElementById('f-cc-limit').value=b.ccLimit||'';
@@ -1269,7 +1282,7 @@ function openEdit(id){
   closeSheet('detail-sheet'); openSheet('add-sheet');
 }
 function clearForm(){
-  ['f-name','f-amount','f-notes','f-url','f-share','f-start','f-end','f-dueday','brand-search','f-cc-balance','f-cc-limit'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+  ['f-name','f-amount','f-notes','f-url','f-share','f-start','f-end','f-dueday','brand-search','f-cc-balance','f-cc-limit','f-paymethod'].forEach(i=>{const el=document.getElementById(i);if(el)el.value=''});
   const catEl=document.getElementById('f-category');if(catEl)catEl.value='';
   toggleCreditFields();
   document.getElementById('f-freq').value='Monthly';
@@ -1302,6 +1315,7 @@ function saveBill(){
     url:document.getElementById('f-url').value.trim(),
     share:document.getElementById('f-share').value.trim(),
     category:document.getElementById('f-category').value||'',
+    payMethod:document.getElementById('f-paymethod').value||'',
     ccBalance:document.getElementById('f-category').value==='creditcard'?(parseFloat(document.getElementById('f-cc-balance').value)||0):null,
     ccLimit:document.getElementById('f-category').value==='creditcard'?(parseFloat(document.getElementById('f-cc-limit').value)||0):null,
     getNotif:document.getElementById('f-get-notif').checked,
@@ -1353,7 +1367,8 @@ function openDetail(id){
   document.getElementById('detail-body').innerHTML=`
     <div class="dico-row">${renderIconWithUrl(b.icon,b.url,68)}<div class="dname">${b.name}</div><div class="dfreq">${b.freq} · ${fmtM(b.amount)}</div><div style="margin-top:6px">${sb}</div>${b.endDate?renderCountdownBadge(b):''}</div>
     <div style="padding-bottom:8px">
-      ${b.category?`<div class="dr"><span class="dr-lbl">Category</span><span class="dr-val">${{'house':'🏠 House/Mortgage','insurance':'🛡️ Insurance','car':'🚗 Car/Auto','subscription':'📺 Subscription','education':'🎓 Education','pets':'🐾 Pets','loan':'💰 Loan','digital':'📱 Digital Services','creditcard':'💳 Credit Card','utilities':'💡 Utilities','health':'🏥 Health/Medical','other':'📋 Other'}[b.category]||b.category}</span></div>`:''}
+      ${b.payMethod?`<div class="dr"><span class="dr-lbl">Payment</span><span class="dr-val" style="color:var(--info)">${fmtPayMethod(b.payMethod)}</span></div>`:''}
+    ${b.category?`<div class="dr"><span class="dr-lbl">Category</span><span class="dr-val">${{'house':'🏠 House/Mortgage','insurance':'🛡️ Insurance','car':'🚗 Car/Auto','subscription':'📺 Subscription','education':'🎓 Education','pets':'🐾 Pets','loan':'💰 Loan','digital':'📱 Digital Services','creditcard':'💳 Credit Card','utilities':'💡 Utilities','health':'🏥 Health/Medical','other':'📋 Other'}[b.category]||b.category}</span></div>`:''}
     ${b.category==='creditcard'&&b.ccBalance!=null?`<div class="dr"><span class="dr-lbl">CC Balance</span><span class="dr-val" style="color:var(--danger)">${fmtM(b.ccBalance)}</span></div>`:''}
     ${b.category==='creditcard'&&b.ccLimit?`<div class="dr"><span class="dr-lbl">Credit Limit</span><span class="dr-val">${fmtM(b.ccLimit)}</span></div>`:''}
     ${b.category==='creditcard'&&b.ccBalance!=null&&b.ccLimit?`<div class="dr"><span class="dr-lbl">Utilization</span><span class="dr-val" style="color:${Math.round((b.ccBalance/b.ccLimit)*100)>=70?'var(--warn)':'var(--accent)'}">${Math.round((b.ccBalance/b.ccLimit)*100)}%</span></div>`:''}
@@ -1553,7 +1568,7 @@ function renderBillList(){
     const cdBadge = b.endDate ? renderCountdownBadge(b, true) : '';
     const isComplete = b.endDate && getPaymentCountdown(b)?.isComplete;
     const dueDisplay=!isClosed(b)&&!p?.paid&&!p?.prepaid?'Due '+fmtDate(dueStr):'Due '+fmtDate(dueStr);
-    return`<div class="bi ${cls}${isComplete?' is-paid':''}" ${dragAttrs} ${onclickAttr}>${dragHandle}${renderIcon(b.icon,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">${b.freq} · ${dueDisplay}</div>${cdBadge?`<div style="margin-top:3px">${cdBadge}</div>`:''}</div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div></div></div>`;
+    const pmBadge2=b.payMethod?`<span style="font-size:9px;background:var(--bg4);color:var(--text2);border-radius:4px;padding:1px 5px;margin-left:4px">${fmtPayMethod(b.payMethod)}</span>`:'';    return`<div class="bi ${cls}${isComplete?' is-paid':''}" ${dragAttrs} ${onclickAttr}>${dragHandle}${renderIcon(b.icon,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">${b.freq} · ${dueDisplay}${pmBadge2}</div>${cdBadge?`<div style="margin-top:3px">${cdBadge}</div>`:''}</div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div></div></div>`;
   }).join('');
 }
 
@@ -2158,6 +2173,18 @@ function loadPlannerFromFirestore(uid){
   }catch(e){}
 }
 
+
+
+function fmtPayMethod(pm){
+  const map={
+    'NO_AUTOPAY':'🚫 No AutoPay',
+    'CAP1_CH':'💳 Cap.One_CH',
+    'CHASE_CH':'💳 Chase_CH',
+    'SPCST_CH':'💳 SpCst_CH',
+    'SPCST_SL_SV':'💳 SpCst_S.L._SV'
+  };
+  return pm?map[pm]||pm:'';
+}
 
 function toggleCreditFields(){
   const cat = document.getElementById('f-category').value;
