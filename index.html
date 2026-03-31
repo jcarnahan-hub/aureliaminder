@@ -401,11 +401,13 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
     <button class="ins-tab active" id="itab-overview" onclick="switchInsTab('overview',this)" style="flex:1;padding:7px;border-radius:var(--radius-sm);background:var(--accent);color:#0d1117;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Overview</button>
     <button class="ins-tab" id="itab-weekly" onclick="switchInsTab('weekly',this)" style="flex:1;padding:7px;border-radius:var(--radius-sm);background:var(--bg3);color:var(--text2);border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Reports</button>
     <button class="ins-tab" id="itab-charts" onclick="switchInsTab('charts',this)" style="flex:1;padding:7px;border-radius:var(--radius-sm);background:var(--bg3);color:var(--text2);border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Charts</button>
+    <button class="ins-tab" id="itab-debt" onclick="switchInsTab('debt',this)" style="flex:1;padding:7px;border-radius:var(--radius-sm);background:var(--bg3);color:var(--text2);border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Debt</button>
   </div>
   <div class="inner" style="padding-top:14px">
     <div id="ins-overview"></div>
     <div id="ins-weekly" style="display:none"></div>
     <div id="ins-charts" style="display:none"></div>
+    <div id="ins-debt" style="display:none"></div>
   </div>
 </div>
 
@@ -659,6 +661,34 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
         </div>
       </div>
 
+      <div class="sdiv"></div>
+      <div class="stitle">Category & Details</div>
+      <div class="fg">
+        <label>Bill category <span style="color:var(--text3);font-size:10px">(optional)</span></label>
+        <select id="f-category" onchange="toggleCreditFields()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-xs);padding:10px 12px;font-size:13px;color:var(--text);font-family:var(--font);outline:none;width:100%">
+          <option value="">-- Select category --</option>
+          <option value="house">🏠 House / Mortgage / Rent</option>
+          <option value="insurance">🛡️ Insurance</option>
+          <option value="car">🚗 Car / Auto</option>
+          <option value="subscription">📺 Subscription</option>
+          <option value="education">🎓 Education</option>
+          <option value="pets">🐾 Pets</option>
+          <option value="loan">💰 Loan</option>
+          <option value="digital">📱 Digital Services</option>
+          <option value="creditcard">💳 Credit Card</option>
+          <option value="utilities">💡 Utilities</option>
+          <option value="health">🏥 Health / Medical</option>
+          <option value="other">📋 Other</option>
+        </select>
+      </div>
+      <div id="credit-card-fields" style="display:none;background:var(--bg3);border-radius:10px;padding:12px;margin-top:4px">
+        <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">💳 Credit Card Details <span style="color:var(--text3);font-weight:400;text-transform:none">(informational only)</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="fg" style="margin:0"><label style="font-size:11px">Current Balance ($)</label><input type="number" id="f-cc-balance" placeholder="e.g. 2500" min="0" step="0.01" style="background:var(--bg4)" oninput="updateCCUtilization()"></div>
+          <div class="fg" style="margin:0"><label style="font-size:11px">Credit Limit ($)</label><input type="number" id="f-cc-limit" placeholder="e.g. 5000" min="0" step="0.01" style="background:var(--bg4)" oninput="updateCCUtilization()"></div>
+        </div>
+        <div id="cc-utilization" style="margin-top:8px;font-size:11px;color:var(--text2)"></div>
+      </div>
       <div class="sdiv"></div>
       <div class="stitle">Extra options</div>
       <div class="fg"><label>Notes</label><textarea id="f-notes" placeholder="Optional notes about this bill…"></textarea></div>
@@ -1205,6 +1235,13 @@ function openEdit(id){
   document.getElementById('f-notes').value=b.notes||'';
   document.getElementById('f-url').value=b.url||'';
   document.getElementById('f-share').value=b.share||'';
+  document.getElementById('f-category').value=b.category||'';
+  toggleCreditFields();
+  if(b.category==='creditcard'){
+    document.getElementById('f-cc-balance').value=b.ccBalance||'';
+    document.getElementById('f-cc-limit').value=b.ccLimit||'';
+    updateCCUtilization();
+  }
   document.getElementById('f-get-notif').checked=b.getNotif!==false;
   document.getElementById('f-bill-remind').checked=!!b.billRemind;
   document.getElementById('f-auto-paid').checked=!!b.autoPaid;
@@ -1213,7 +1250,9 @@ function openEdit(id){
   closeSheet('detail-sheet'); openSheet('add-sheet');
 }
 function clearForm(){
-  ['f-name','f-amount','f-notes','f-url','f-share','f-start','f-end','f-dueday','brand-search'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+  ['f-name','f-amount','f-notes','f-url','f-share','f-start','f-end','f-dueday','brand-search','f-cc-balance','f-cc-limit'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+  const catEl=document.getElementById('f-category');if(catEl)catEl.value='';
+  toggleCreditFields();
   document.getElementById('f-freq').value='Monthly';
   document.getElementById('f-notify').value=cfg.defaultNotify||'1 day before';
   document.getElementById('f-get-notif').checked=true;
@@ -1243,6 +1282,9 @@ function saveBill(){
     notes:document.getElementById('f-notes').value.trim(),
     url:document.getElementById('f-url').value.trim(),
     share:document.getElementById('f-share').value.trim(),
+    category:document.getElementById('f-category').value||'',
+    ccBalance:document.getElementById('f-category').value==='creditcard'?(parseFloat(document.getElementById('f-cc-balance').value)||0):null,
+    ccLimit:document.getElementById('f-category').value==='creditcard'?(parseFloat(document.getElementById('f-cc-limit').value)||0):null,
     getNotif:document.getElementById('f-get-notif').checked,
     billRemind:document.getElementById('f-bill-remind').checked,
     autoPaid:document.getElementById('f-auto-paid').checked,
@@ -1292,7 +1334,11 @@ function openDetail(id){
   document.getElementById('detail-body').innerHTML=`
     <div class="dico-row">${renderIconWithUrl(b.icon,b.url,68)}<div class="dname">${b.name}</div><div class="dfreq">${b.freq} · ${fmtM(b.amount)}</div><div style="margin-top:6px">${sb}</div>${b.endDate?renderCountdownBadge(b):''}</div>
     <div style="padding-bottom:8px">
-      <div class="dr"><span class="dr-lbl">Start date</span><span class="dr-val">${fmtDate(b.startDate)}</span></div>
+      ${b.category?`<div class="dr"><span class="dr-lbl">Category</span><span class="dr-val">${{'house':'🏠 House/Mortgage','insurance':'🛡️ Insurance','car':'🚗 Car/Auto','subscription':'📺 Subscription','education':'🎓 Education','pets':'🐾 Pets','loan':'💰 Loan','digital':'📱 Digital Services','creditcard':'💳 Credit Card','utilities':'💡 Utilities','health':'🏥 Health/Medical','other':'📋 Other'}[b.category]||b.category}</span></div>`:''}
+    ${b.category==='creditcard'&&b.ccBalance!=null?`<div class="dr"><span class="dr-lbl">CC Balance</span><span class="dr-val" style="color:var(--danger)">${fmtM(b.ccBalance)}</span></div>`:''}
+    ${b.category==='creditcard'&&b.ccLimit?`<div class="dr"><span class="dr-lbl">Credit Limit</span><span class="dr-val">${fmtM(b.ccLimit)}</span></div>`:''}
+    ${b.category==='creditcard'&&b.ccBalance!=null&&b.ccLimit?`<div class="dr"><span class="dr-lbl">Utilization</span><span class="dr-val" style="color:${Math.round((b.ccBalance/b.ccLimit)*100)>=70?'var(--warn)':'var(--accent)'}">${Math.round((b.ccBalance/b.ccLimit)*100)}%</span></div>`:''}
+    <div class="dr"><span class="dr-lbl">Start date</span><span class="dr-val">${fmtDate(b.startDate)}</span></div>
       <div class="dr"><span class="dr-lbl">End date</span><span class="dr-val">${b.endDate?fmtDate(b.endDate):'Ongoing'}</span></div>
       <div class="dr"><span class="dr-lbl">Due day</span><span class="dr-val">${b.dueDayOfMonth?'Day '+b.dueDayOfMonth+' of period':'—'}</span></div>
       <div class="dr"><span class="dr-lbl">Notify me</span><span class="dr-val">${b.notify||'—'}</span></div>
@@ -1537,6 +1583,7 @@ function switchInsTab(tab,btn){
   ['overview','weekly','charts'].forEach(t=>document.getElementById('ins-'+t).style.display=t===tab?'block':'none');
   if(tab==='charts') renderCharts();
   if(tab==='weekly') renderWeeklyReport();
+  if(tab==='debt') renderDebtReport();
 }
 
 function renderInsights(){
@@ -1546,6 +1593,7 @@ function renderInsights(){
   renderOverview(y,m,now);
   if(insTab==='weekly') renderWeeklyReport();
   if(insTab==='charts') renderCharts();
+  if(insTab==='debt') renderDebtReport();
 }
 
 function renderOverview(y,m,now){
@@ -1673,7 +1721,7 @@ function renderWeeklyReport(){
         <div style="font-size:14px;font-weight:700;color:var(--text)">${periodLabel}</div>
         <div style="font-size:11px;color:var(--text2)">${periodSub}</div>
       </div>
-      <button onclick="reportNext()" class="cal-nav" ${reportOffset>=0?'style="opacity:.4;pointer-events:none"':''}>›</button>
+      <button onclick="reportNext()" class="cal-nav">›</button>
     </div>
     <!-- Summary Cards -->
     <div class="ins-grid" style="margin-bottom:12px">
@@ -1683,6 +1731,70 @@ function renderWeeklyReport(){
     ${reportOffset===0&&overdueList.length?`<div class="sh"><h2>Overdue</h2></div><div class="card" style="border-color:rgba(239,68,68,.3);margin-bottom:12px">${overdueList.map(b=>`<div class="wr-row"><div style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer" onclick="openDetail(${b.id})">${renderIconWithUrl(b.icon,b.url,30)}<div><div style="font-size:13px;font-weight:600;color:var(--danger)">${b.name}</div><div style="font-size:11px;color:var(--text2)">Was due ${fmtDate(dueDateFor(b,now.getFullYear(),now.getMonth()))}</div></div></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}</span><button class="btn btn-accent" style="padding:5px 10px;font-size:11px" onclick="openPaySheet(${b.id})">Pay</button></div></div>`).join('')}</div>`:''}
     <!-- Bill Groups -->
     ${Object.keys(groups).length?Object.entries(groups).map(([lbl,bs])=>`<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">${lbl}</div><div class="card">${bs.filter((b,i,a)=>a.findIndex(x=>x.id===b.id)===i).map(b=>{const p=paymentThisMonth(b);return`<div class="wr-row"><div style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer" onclick="openDetail(${b.id})">${renderIconWithUrl(b.icon,b.url,30)}<div><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">${b.freq} · ${fmtM(b.amount)}</div></div></div><div style="display:flex;align-items:center;gap:7px">${p?.paid||p?.prepaid?`<span class="badge ${p.prepaid?'b-prepaid':'b-paid'}">${p.prepaid?'Pre-paid':'Paid'}</span>`:`<button class="btn btn-accent" style="padding:5px 10px;font-size:11px" onclick="openPaySheet(${b.id})">Pay</button>`}<span style="font-size:14px;font-weight:700;font-family:var(--mono);min-width:58px;text-align:right">${fmtM(b.amount)}</span></div></div>`;}).join('')}</div></div>`).join(''):`<div class="empty" style="padding:24px"><div class="empty-ico">📋</div><div class="empty-t">No bills in this period</div></div>`}
+  `;
+}
+
+
+// ── Debt Overview ──
+function renderDebtReport(){
+  cfg=window.cfg; bills=window.bills;
+  const ccBills = bills.filter(b=>b.category==='creditcard'&&!isClosed(b));
+  const loanBills = bills.filter(b=>b.category==='loan'&&!isClosed(b));
+  const mortgageBills = bills.filter(b=>b.category==='house'&&!isClosed(b));
+  const carBills = bills.filter(b=>b.category==='car'&&!isClosed(b));
+
+  const totalCCBalance = ccBills.reduce((s,b)=>s+(b.ccBalance||0),0);
+  const totalCCLimit   = ccBills.reduce((s,b)=>s+(b.ccLimit||0),0);
+  const overallUtil    = totalCCLimit>0?Math.round((totalCCBalance/totalCCLimit)*100):0;
+  const utilColor      = overallUtil>=90?'var(--danger)':overallUtil>=70?'var(--warn)':overallUtil>=50?'var(--info)':'var(--accent)';
+
+  const totalMonthly = bills.filter(b=>!isClosed(b)).reduce((s,b)=>s+b.amount,0);
+
+  const ccRows = ccBills.length ? ccBills.map(b=>{
+    const bal=b.ccBalance||0, lim=b.ccLimit||0;
+    const pct=lim>0?Math.round((bal/lim)*100):null;
+    const pc=pct>=90?'var(--danger)':pct>=70?'var(--warn)':pct>=50?'var(--info)':'var(--accent)';
+    return`<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        ${renderIconWithUrl(b.icon,b.url,32)}
+        <div style="flex:1"><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">Min payment: ${fmtM(b.amount)}/mo</div></div>
+        <div style="text-align:right"><div style="font-size:14px;font-weight:700;color:var(--danger)">${fmtM(bal)}</div>${lim?`<div style="font-size:10px;color:var(--text2)">of ${fmtM(lim)}</div>`:''}
+        </div>
+      </div>
+      ${lim&&pct!==null?`<div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.min(pct,100)}%;background:${pc};border-radius:3px"></div></div><div style="font-size:10px;color:${pc};margin-top:3px">${pct}% utilized · ${fmtM(lim-bal)} available</div>`:''}
+    </div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--text2);text-align:center;padding:12px">No credit cards added yet.<br>Add a bill with category "Credit Card" to track balances.</div>';
+
+  const catGroups = {};
+  bills.filter(b=>!isClosed(b)&&b.category).forEach(b=>{
+    const cat=b.category;
+    if(!catGroups[cat]) catGroups[cat]={bills:[],total:0};
+    catGroups[cat].bills.push(b);
+    catGroups[cat].total+=b.amount;
+  });
+  const catLabels={'house':'🏠 House','insurance':'🛡️ Insurance','car':'🚗 Car','subscription':'📺 Subscriptions','education':'🎓 Education','pets':'🐾 Pets','loan':'💰 Loans','digital':'📱 Digital','creditcard':'💳 Credit Cards','utilities':'💡 Utilities','health':'🏥 Health','other':'📋 Other'};
+
+  document.getElementById('ins-debt').innerHTML=`
+    <div style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Summary</div>
+      <div class="ins-grid">
+        <div class="ic"><div class="ic-lbl">CC Balance</div><div class="ic-val" style="color:var(--danger);font-size:${totalCCBalance>0?'20px':'14px'}">${totalCCBalance>0?fmtM(totalCCBalance):'—'}</div><div class="ic-sub">${ccBills.length} card${ccBills.length!==1?'s':''}</div></div>
+        <div class="ic"><div class="ic-lbl">Overall Util.</div><div class="ic-val" style="color:${utilColor};font-size:${totalCCLimit>0?'20px':'14px'}">${totalCCLimit>0?overallUtil+'%':'—'}</div><div class="ic-sub">${totalCCLimit>0?fmtM(totalCCLimit)+' total limit':'No limits set'}</div></div>
+      </div>
+      ${totalCCLimit>0?`<div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${Math.min(overallUtil,100)}%;background:${utilColor};border-radius:3px"></div></div><div style="font-size:11px;color:var(--text2);margin-top:4px">${fmtM(totalCCLimit-totalCCBalance)} available across all cards</div>`:''}
+    </div>
+
+    ${Object.keys(catGroups).length?`<div style="font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">By Category</div>
+    <div class="card" style="margin-bottom:14px">${Object.entries(catGroups).sort((a,b_)=>b_[1].total-a[1].total).map(([cat,{bills:bs,total}])=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:13px">${catLabels[cat]||cat} <span style="font-size:11px;color:var(--text2)">(${bs.length})</span></div>
+        <div style="font-size:13px;font-weight:700;font-family:var(--mono)">${fmtM(total)}<span style="font-size:10px;color:var(--text2)">/mo</span></div>
+      </div>`).join('')}
+      <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:700"><span>Categorized total</span><span style="font-family:var(--mono);color:var(--accent)">${fmtM(Object.values(catGroups).reduce((s,{total})=>s+total,0))}/mo</span></div>
+    </div>`:'<div class="card" style="margin-bottom:14px;text-align:center;padding:16px;color:var(--text2);font-size:13px">No categories set yet.<br>Edit your bills to add categories.</div>'}
+
+    <div style="font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Credit Cards</div>
+    <div class="card" style="margin-bottom:14px">${ccRows}</div>
   `;
 }
 
@@ -2012,6 +2124,27 @@ function loadPlannerFromFirestore(uid){
         }
       }).catch(e=>console.error('Load planner error:',e));
   }catch(e){}
+}
+
+
+function toggleCreditFields(){
+  const cat = document.getElementById('f-category').value;
+  const fields = document.getElementById('credit-card-fields');
+  fields.style.display = cat==='creditcard' ? 'block' : 'none';
+}
+
+function updateCCUtilization(){
+  const bal = parseFloat(document.getElementById('f-cc-balance').value)||0;
+  const lim = parseFloat(document.getElementById('f-cc-limit').value)||0;
+  const el = document.getElementById('cc-utilization');
+  if(!el) return;
+  if(bal>0 && lim>0){
+    const pct = Math.round((bal/lim)*100);
+    const color = pct>=90?'var(--danger)':pct>=70?'var(--warn)':pct>=50?'var(--info)':'var(--accent)';
+    el.innerHTML = `Utilization: <span style="font-weight:700;color:${color}">${pct}%</span> · ${fmtM(lim-bal)} available`;
+  } else {
+    el.innerHTML = '';
+  }
 }
 
 // ══════════════════════════════════════════
