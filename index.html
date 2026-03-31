@@ -1345,6 +1345,20 @@ function unmarkPaid(id){
 // ══════════════════════════════════════════
 //  NOTIFICATION BANNERS
 // ══════════════════════════════════════════
+function toggleMoreReminders(){
+  const list = document.getElementById('more-reminders-list');
+  const toggle = document.getElementById('more-reminders-toggle');
+  if(!list||!toggle) return;
+  if(list.style.display==='none'){
+    list.style.display='block';
+    toggle.textContent='▲ Show fewer reminders';
+  } else {
+    list.style.display='none';
+    const cnt = list.querySelectorAll('.notif-banner').length;
+    toggle.textContent='▼ Show '+cnt+' more reminder'+(cnt!==1?'s':'');
+  }
+}
+
 function renderNotifBanners(){
   const container=document.getElementById('notif-banners');
   if(!cfg.notif){container.innerHTML='';return;}
@@ -1360,7 +1374,16 @@ function renderNotifBanners(){
       <div style="font-size:12px;color:var(--text2)">›</div>
     </div>`;
   }).join('');
-  if(alerts.length>3) container.innerHTML+=`<div style="font-size:12px;color:var(--text2);text-align:center;padding:6px 0">${alerts.length-3} more reminder${alerts.length-3!==1?'s':''}</div>`;
+  if(alerts.length>3){
+    const remaining = alerts.slice(3);
+    container.innerHTML+=`<div id="more-reminders-toggle" onclick="toggleMoreReminders()" style="font-size:12px;color:var(--accent);text-align:center;padding:8px 0;cursor:pointer;font-weight:600">▼ Show ${remaining.length} more reminder${remaining.length!==1?'s':''}</div>`;
+    container.innerHTML+=`<div id="more-reminders-list" style="display:none">${remaining.map(b=>{
+      const du=daysUntilDue(b);
+      const isOd=du<0;
+      const msg=isOd?'Overdue by '+Math.abs(du)+' day'+(Math.abs(du)!==1?'s':''):du===0?'Due today!':du===1?'Due tomorrow':'Due in '+du+' days';
+      return'<div class="notif-banner '+(isOd?'danger':'')+'" onclick="openDetail('+b.id+');event.stopPropagation()"><div class="notif-banner-icon">'+(isOd?'🚨':'⏰')+'</div><div style="flex:1"><div class="notif-banner-text">'+b.name+'</div><div class="notif-banner-sub">'+msg+' · '+fmtM(b.amount)+' · '+fmtDate(dueDateFor(b,new Date().getFullYear(),new Date().getMonth()))+'</div></div><div style="font-size:12px;color:var(--text2)">›</div></div>';
+    }).join('')}</div>`;
+  }
 }
 
 
@@ -1820,9 +1843,10 @@ function renderPlannerPaychecks(){
 
 function renderPlannerUnassigned(){
   const n=new Date(); const y=n.getFullYear(); const m=n.getMonth();
-  const allAssigned = Object.values(plannerData.assignments||{}).flat();
   bills = window.bills; // always sync
-  const activeBills = bills.filter(b=>!isClosed(b));
+  const allAssigned = Object.values(plannerData.assignments||{}).flat();
+  const activeBills = (bills||[]).filter(b=>!isClosed(b));
+  console.log('Planner unassigned check - total bills:', bills.length, 'allAssigned:', allAssigned.length);
   const unassigned  = activeBills.filter(b=>!allAssigned.includes(b.id));
   const paydays = getPlannerPaydays();
   const container = document.getElementById('planner-unassigned');
