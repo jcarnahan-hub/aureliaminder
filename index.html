@@ -1733,6 +1733,7 @@ function togglePayday(dateStr){
 }
 
 function renderPlannerCalendar(){
+  if(!document.getElementById('planner-cal-grid')) return;
   const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('planner-cal-title').textContent = months[plannerMonth]+' '+plannerYear;
   const firstDay = new Date(plannerYear, plannerMonth, 1).getDay();
@@ -1776,6 +1777,7 @@ function assignBill(billId, paycheckDate){
 }
 
 function renderPlannerPaychecks(){
+  bills = window.bills; // always sync
   const paydays = getPlannerPaydays();
   const salary  = cfg.salary || 0;
   const container = document.getElementById('planner-paychecks');
@@ -1819,6 +1821,7 @@ function renderPlannerPaychecks(){
 function renderPlannerUnassigned(){
   const n=new Date(); const y=n.getFullYear(); const m=n.getMonth();
   const allAssigned = Object.values(plannerData.assignments||{}).flat();
+  bills = window.bills; // always sync
   const activeBills = bills.filter(b=>!isClosed(b));
   const unassigned  = activeBills.filter(b=>!allAssigned.includes(b.id));
   const paydays = getPlannerPaydays();
@@ -1845,6 +1848,7 @@ function renderPlannerUnassigned(){
 }
 
 function renderPlanner(){
+  bills = window.bills; // sync before rendering
   renderPlannerCalendar();
   renderPlannerPaychecks();
   renderPlannerUnassigned();
@@ -1861,7 +1865,7 @@ function loadPlannerFromFirestore(uid){
         if(snap.exists){
           plannerData = Object.assign({paydays:[],assignments:{},notes:''}, snap.data());
           localStorage.setItem('am-planner', JSON.stringify(plannerData));
-          if(document.getElementById('page-planner').classList.contains('active')) renderPlanner();
+          if(p==='planner'){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
         }
       }).catch(e=>console.error('Load planner error:',e));
   }catch(e){}
@@ -1918,7 +1922,7 @@ window.render = function render(){
   renderNotifBanners();
   if(document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
   if(document.getElementById('page-insights').classList.contains('active')) renderInsights();
-  if(document.getElementById('page-planner').classList.contains('active')) renderPlanner();
+  if(p==='planner'){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
 }
 
 // ══════════════════════════════════════════
@@ -1932,6 +1936,9 @@ if('serviceWorker'in navigator) navigator.serviceWorker.register('sw.js').catch(
 applyTheme(cfg.theme||'dark');
 renderSettingsUI();
 render();
+
+// ── INIT PLANNER ──
+renderPlannerCalendar();
 
 // ── SPLASH ──
 window.addEventListener('load', () => {
@@ -2044,6 +2051,7 @@ window.addEventListener('load', () => {
         window.renderSettingsUI();
         window.applyTheme(window.cfg.theme||'dark');
         window.render();
+        if(p==='planner'){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
       } catch(e){ console.error('Load error:',e); window.render(); }
 
       // Process any pending saves
@@ -2060,7 +2068,7 @@ window.addEventListener('load', () => {
               bills = window.bills;
               localStorage.setItem('am-bills', JSON.stringify(window.bills));
               window.render();
-              if(document.getElementById('page-planner').classList.contains('active')) renderPlanner();
+              if(p==='planner'){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
             }
           }
         }, function(e){ console.error('Snapshot error:',e); });
