@@ -756,6 +756,21 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
   </div>
 </div>
 
+
+<!-- ══ EXTRA INCOME SHEET ══ -->
+<div class="overlay" id="extra-income-sheet">
+  <div class="sheet"><div class="shandle"></div>
+    <div class="shd"><h2>Additional Income</h2><button class="shclose" onclick="closeSheet('extra-income-sheet')">×</button></div>
+    <div class="sbody">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Add any regular income beyond your main salary — VA benefits, side income, child support, etc.</p>
+      <div id="extra-income-list"></div>
+      <button class="btn btn-ghost btn-full" onclick="addExtraIncomeRow()" style="margin-top:10px">+ Add income source</button>
+      <div style="margin-top:16px">
+        <button class="btn btn-accent btn-full" onclick="saveExtraIncome()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- ══ SALARY SHEET ══ -->
 <div class="overlay" id="salary-sheet">
   <div class="sheet"><div class="shandle"></div>
@@ -1602,7 +1617,7 @@ function renderOverview(y,m,now){
   const paidBills=insBills.filter(b=>{const p=paymentThisMonth(b);return p&&(p.paid||p.prepaid);});
   const paidAmt=paidBills.reduce((s,b)=>s+b.amount,0);
   const remaining=total-paidAmt,paidCt=paidBills.length,unpaidCt=insBills.length-paidCt;
-  cfg=window.cfg; const sal=cfg.salary||0,spendable=sal-total,pct=sal>0?Math.round((total/sal)*100):0;
+  cfg=window.cfg; const sal=cfg.salary||0,extraInc=getTotalExtraIncome(),totalInc=sal+extraInc,spendable=totalInc-total,pct=totalInc>0?Math.round((total/totalInc)*100):0;
   const pc=pct>=90?'var(--danger)':pct>=70?'var(--warn)':'var(--accent)';
   const pd=cfg.payDate; let payHtml='<div onclick="openPayDate()" style="color:var(--accent);cursor:pointer;font-size:13px;font-weight:600">Tap to set ✏️</div>';
   if(pd){const pdd=new Date(pd+'T12:00'),tod=today();const du=Math.ceil((pdd-tod)/864e5);payHtml=du>0?`${fmtDate(pd)}<br><small style="color:var(--text2);font-size:10px">in ${du} day${du!==1?'s':''}</small>`:du===0?`<span style="color:var(--accent)">${fmtDate(pd)}<br><small>Today!</small></span>`:fmtDate(pd);}
@@ -1618,13 +1633,13 @@ function renderOverview(y,m,now){
       <div class="ic"><div class="ic-lbl">Paid so far</div><div class="ic-val" style="color:var(--accent)">${fmtM(paidAmt)}</div><div class="ic-sub">${paidCt} of ${insBills.length}</div></div>
     </div>
     <div class="ins-grid">
-      <div class="ic" onclick="openSalary()" style="cursor:pointer"><div class="ic-lbl">Spendable <span style="font-size:9px;color:var(--accent)">✏️</span></div><div class="ic-val" style="color:${spendable>=0?'var(--info)':'var(--danger)'};font-size:${sal?'20px':'14px'}">${sal?(spendable<0?'-':'')+fmtM(Math.abs(spendable)):'Tap to set'}</div><div class="ic-sub">${sal?'after all bills':'Set monthly salary'}</div></div>
+      <div class="ic" onclick="openSalary()" style="cursor:pointer"><div class="ic-lbl">Spendable <span style="font-size:9px;color:var(--accent)">✏️</span></div><div class="ic-val" style="color:${spendable>=0?'var(--info)':'var(--danger)'};font-size:${sal?'20px':'14px'}">${totalInc?(spendable<0?'-':'')+fmtM(Math.abs(spendable)):'Tap to set'}</div><div class="ic-sub">${totalInc?'after all bills':'Set monthly salary'}</div></div>
       <div class="ic"><div class="ic-lbl">Next pay date</div><div class="ic-val" style="font-size:14px;color:var(--info)">${payHtml}</div></div>
     </div>
-    ${sal?`<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px"><span style="font-size:13px;color:var(--text2);font-weight:500">Bills as % of income</span><span style="font-size:16px;font-weight:700;font-family:var(--mono);color:${pc}">${pct}%</span></div><div class="prog-wrap"><div class="prog" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><div style="font-size:11px;color:var(--text2);margin-top:6px">${fmtM(total)} of ${fmtM(sal)} monthly income</div></div>`:''}
+    ${sal?`<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px"><span style="font-size:13px;color:var(--text2);font-weight:500">Bills as % of income</span><span style="font-size:16px;font-weight:700;font-family:var(--mono);color:${pc}">${pct}%</span></div><div class="prog-wrap"><div class="prog" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><div style="font-size:11px;color:var(--text2);margin-top:6px">${fmtM(total)} of ${fmtM(totalInc)} total monthly income${extraInc>0?' (incl. '+fmtM(extraInc)+' additional)':''}</div></div>`:''}
     ${upcoming7.length?`<div class="sh" style="margin-top:4px"><h2>Due this week</h2></div><div class="card">${upcoming7.map(b=>`<div class="wr-row"><div style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1" onclick="openDetail(${b.id})">${renderIcon(b.icon,30)}<div><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">Due ${fmtDate(dueDateFor(b,y,m))}</div></div></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}</span><button class="btn btn-accent" style="padding:5px 10px;font-size:11px" onclick="openPaySheet(${b.id})">Pay</button></div></div>`).join('')}</div>`:''}
     <div class="sh" style="margin-top:${upcoming7.length?'4':'14'}px"><h2>All bills</h2></div>
-    ${insBills.length?`<div class="card">${[...insBills].sort((a,b_)=>b_.amount-a.amount).map(b=>{const p=paymentThisMonth(b);return`<div class="wr-row" onclick="openDetail(${b.id})" style="cursor:pointer"><div style="display:flex;align-items:center;gap:10px">${renderIcon(b.icon,30)}<div><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">${b.freq}${sal?' · '+Math.round((b.amount/sal)*100)+'%':''}</div></div></div><div style="text-align:right"><div style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}</div>${p?.prepaid?`<span class="badge b-prepaid" style="font-size:9px">pre-paid</span>`:p?.paid?`<span class="badge b-paid" style="font-size:9px">paid</span>`:''}</div></div>`;}).join('')}</div>`:`<div class="empty" style="padding:24px"><div class="empty-t">No bills yet</div></div>`}`;
+    ${insBills.length?`<div class="card">${[...insBills].sort((a,b_)=>b_.amount-a.amount).map(b=>{const p=paymentThisMonth(b);return`<div class="wr-row" onclick="openDetail(${b.id})" style="cursor:pointer"><div style="display:flex;align-items:center;gap:10px">${renderIcon(b.icon,30)}<div><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">${b.freq}${totalInc?' · '+(b.amount/totalInc*100<1?(b.amount/totalInc*100).toFixed(1):Math.round(b.amount/totalInc*100))+'%':''}</div></div></div><div style="text-align:right"><div style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}</div>${p?.prepaid?`<span class="badge b-prepaid" style="font-size:9px">pre-paid</span>`:p?.paid?`<span class="badge b-paid" style="font-size:9px">paid</span>`:''}</div></div>`;}).join('')}</div>`:`<div class="empty" style="padding:24px"><div class="empty-t">No bills yet</div></div>`}`;
 }
 
 // ── Reports (Week/Month/Year) ──
@@ -1867,6 +1882,13 @@ window.renderSettingsUI = function renderSettingsUI(){
   const fmtD=d=>{if(!d)return'Not set';const[y,m,dd]=d.split('-');return`${m}/${dd}/${y}`;};
   document.getElementById('s-salary-lbl').textContent=fmtM2(cfg.salary);
   document.getElementById('s-paydate-lbl').textContent=fmtD(cfg.payDate);
+  const extraEl=document.getElementById('s-extra-income-lbl');
+  if(extraEl){
+    const sources=cfg.extraIncome||[];
+    if(!sources.length) extraEl.textContent='Not set';
+    else if(sources.length===1) extraEl.textContent=sources[0].desc+': '+fmtM2(sources[0].amount)+'/mo';
+    else extraEl.textContent=sources.length+' sources · '+fmtM2(getTotalExtraIncome())+'/mo total';
+  }
   document.getElementById('s-notif').checked=cfg.notif!==false;
   document.getElementById('s-notif-until').checked=!!cfg.notifUntil;
   document.getElementById('s-weekly').checked=cfg.weekly!==false;
@@ -2145,6 +2167,72 @@ function updateCCUtilization(){
   } else {
     el.innerHTML = '';
   }
+}
+
+
+// ══════════════════════════════════════════
+//  EXTRA INCOME
+// ══════════════════════════════════════════
+function openExtraIncome(){
+  renderExtraIncomeRows();
+  openSheet('extra-income-sheet');
+}
+
+function renderExtraIncomeRows(){
+  const sources = cfg.extraIncome || [];
+  const container = document.getElementById('extra-income-list');
+  if(!container) return;
+  if(!sources.length){
+    container.innerHTML = '';
+    addExtraIncomeRow();
+    return;
+  }
+  container.innerHTML = sources.map((s,i)=>`
+    <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end;margin-bottom:10px" id="eir-${i}">
+      <div class="fg" style="margin:0">
+        <label style="font-size:11px">Description</label>
+        <input type="text" id="ei-desc-${i}" value="${s.desc||''}" placeholder="e.g. VA Disability" style="background:var(--bg3)">
+      </div>
+      <div class="fg" style="margin:0;width:100px">
+        <label style="font-size:11px">Amount ($)</label>
+        <input type="number" id="ei-amt-${i}" value="${s.amount||''}" placeholder="0.00" min="0" step="0.01" style="background:var(--bg3)">
+      </div>
+      <button onclick="removeExtraIncomeRow(${i})" style="background:var(--danger-dim);border:none;border-radius:8px;padding:10px;cursor:pointer;color:var(--danger);font-size:14px;margin-bottom:1px">×</button>
+    </div>`).join('');
+}
+
+function addExtraIncomeRow(){
+  const sources = cfg.extraIncome || [];
+  sources.push({desc:'',amount:0});
+  cfg.extraIncome = sources;
+  renderExtraIncomeRows();
+}
+
+function removeExtraIncomeRow(i){
+  const sources = cfg.extraIncome || [];
+  sources.splice(i,1);
+  cfg.extraIncome = sources;
+  window.cfg.extraIncome = sources;
+  renderExtraIncomeRows();
+}
+
+function saveExtraIncome(){
+  const sources = cfg.extraIncome || [];
+  const saved = sources.map((s,i)=>({
+    desc: document.getElementById('ei-desc-'+i)?.value.trim()||'',
+    amount: parseFloat(document.getElementById('ei-amt-'+i)?.value)||0
+  })).filter(s=>s.desc||s.amount>0);
+  window.cfg.extraIncome = saved;
+  cfg = window.cfg;
+  localStorage.setItem('am-cfg',JSON.stringify(cfg));
+  saveCfgToFirestore();
+  document.getElementById('extra-income-sheet').classList.remove('open');
+  window.renderSettingsUI();
+  renderInsights();
+}
+
+function getTotalExtraIncome(){
+  return (cfg.extraIncome||[]).reduce((s,e)=>s+(e.amount||0),0);
 }
 
 // ══════════════════════════════════════════
