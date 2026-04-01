@@ -693,6 +693,7 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
           <option value="CHASE_CH">💳 Chase Checking: AutoPay</option>
           <option value="SPCST_CH">💳 SpCst Checking: AutoPay</option>
           <option value="SPCST_SL_SV">💳 SpCst S.L. Savings: AutoPay</option>
+          <option value="HSA">🏥 HSA: AutoPay</option>
         </select>
       </div>
 
@@ -1568,7 +1569,7 @@ function renderBillList(){
     const cdBadge = b.endDate ? renderCountdownBadge(b, true) : '';
     const isComplete = b.endDate && getPaymentCountdown(b)?.isComplete;
     const dueDisplay=!isClosed(b)&&!p?.paid&&!p?.prepaid?'Due '+fmtDate(dueStr):'Due '+fmtDate(dueStr);
-    const pmBadge2=b.payMethod?`<span style="font-size:9px;background:var(--bg4);color:var(--text2);border-radius:4px;padding:1px 5px;margin-left:4px">${fmtPayMethod(b.payMethod)}</span>`:'';    return`<div class="bi ${cls}${isComplete?' is-paid':''}" ${dragAttrs} ${onclickAttr}>${dragHandle}${renderIcon(b.icon,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">${b.freq} · ${dueDisplay}${pmBadge2}</div>${cdBadge?`<div style="margin-top:3px">${cdBadge}</div>`:''}</div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div></div></div>`;
+    const pmBadge2=b.payMethod?`<span style="font-size:9px;background:var(--bg4);color:var(--text2);border-radius:4px;padding:1px 5px;margin-left:4px">${fmtPayMethod(b.payMethod)}</span>`:'';    return`<div class="bi ${cls}${isComplete?' is-paid':''}" ${dragAttrs} ${onclickAttr}>${dragHandle}${renderIconWithUrl(b.icon,b.url,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">${b.freq} · ${dueDisplay}${pmBadge2}</div>${cdBadge?`<div style="margin-top:3px">${cdBadge}</div>`:''}</div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div></div></div>`;
   }).join('');
 }
 
@@ -1603,7 +1604,7 @@ function openCalDay(ds){
   const[y,m,d]=ds.split('-').map(Number);
   const bs=billsDueOn(y,m-1,d); if(!bs.length)return;
   document.getElementById('calday-title').textContent=`Bills due ${fmtDate(ds)}`;
-  document.getElementById('calday-body').innerHTML=bs.map(b=>`<div class="bi" onclick="closeSheet('calday-sheet');openDetail(${b.id})">${renderIcon(b.icon,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">${b.freq}</div></div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div></div></div>`).join('')+`<div style="height:6px"></div>`;
+  document.getElementById('calday-body').innerHTML=bs.map(b=>`<div class="bi" onclick="closeSheet('calday-sheet');openDetail(${b.id})">${renderIconWithUrl(b.icon,b.url,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">${b.freq}</div></div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div></div></div>`).join('')+`<div style="height:6px"></div>`;
   openSheet('calday-sheet');
 }
 
@@ -1656,9 +1657,9 @@ function renderOverview(y,m,now){
       <div class="ic"><div class="ic-lbl">Next pay date</div><div class="ic-val" style="font-size:14px;color:var(--info)">${payHtml}</div></div>
     </div>
     ${sal?`<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px"><span style="font-size:13px;color:var(--text2);font-weight:500">Bills as % of income</span><span style="font-size:16px;font-weight:700;font-family:var(--mono);color:${pc}">${pct}%</span></div><div class="prog-wrap"><div class="prog" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><div style="font-size:11px;color:var(--text2);margin-top:6px">${fmtM(total)} of ${fmtM(totalInc)} total monthly income${extraInc>0?' (incl. '+fmtM(extraInc)+' additional)':''}</div></div>`:''}
-    ${upcoming7.length?`<div class="sh" style="margin-top:4px"><h2>Due this week</h2></div><div class="card">${upcoming7.map(b=>`<div class="wr-row"><div style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1" onclick="openDetail(${b.id})">${renderIcon(b.icon,30)}<div><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">Due ${fmtDate(dueDateFor(b,y,m))}</div></div></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}</span><button class="btn btn-accent" style="padding:5px 10px;font-size:11px" onclick="openPaySheet(${b.id})">Pay</button></div></div>`).join('')}</div>`:''}
+    ${upcoming7.length?`<div class="sh" style="margin-top:4px"><h2>Due this week</h2></div><div class="card">${upcoming7.map(b=>`<div class="wr-row"><div style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1" onclick="openDetail(${b.id})">${renderIconWithUrl(b.icon,b.url,30)}<div><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">Due ${fmtDate(dueDateFor(b,y,m))}</div></div></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}</span><button class="btn btn-accent" style="padding:5px 10px;font-size:11px" onclick="openPaySheet(${b.id})">Pay</button></div></div>`).join('')}</div>`:''}
     <div class="sh" style="margin-top:${upcoming7.length?'4':'14'}px"><h2>All bills</h2></div>
-    ${insBills.length?`<div class="card">${[...insBills].sort((a,b_)=>b_.amount-a.amount).map(b=>{const p=paymentThisMonth(b);return`<div class="wr-row" onclick="openDetail(${b.id})" style="cursor:pointer"><div style="display:flex;align-items:center;gap:10px">${renderIcon(b.icon,30)}<div><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">${b.freq}${totalInc?' · '+(b.amount/totalInc*100<1?(b.amount/totalInc*100).toFixed(1):Math.round(b.amount/totalInc*100))+'%':''}</div></div></div><div style="text-align:right"><div style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}</div>${p?.prepaid?`<span class="badge b-prepaid" style="font-size:9px">pre-paid</span>`:p?.paid?`<span class="badge b-paid" style="font-size:9px">paid</span>`:''}</div></div>`;}).join('')}</div>`:`<div class="empty" style="padding:24px"><div class="empty-t">No bills yet</div></div>`}`;
+    ${insBills.length?`<div class="card">${[...insBills].sort((a,b_)=>b_.amount-a.amount).map(b=>{const p=paymentThisMonth(b);return`<div class="wr-row" onclick="openDetail(${b.id})" style="cursor:pointer"><div style="display:flex;align-items:center;gap:10px">${renderIconWithUrl(b.icon,b.url,30)}<div><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">${b.freq}${totalInc?' · '+(b.amount/totalInc*100<1?(b.amount/totalInc*100).toFixed(1):Math.round(b.amount/totalInc*100))+'%':''}</div></div></div><div style="text-align:right"><div style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}</div>${p?.prepaid?`<span class="badge b-prepaid" style="font-size:9px">pre-paid</span>`:p?.paid?`<span class="badge b-paid" style="font-size:9px">paid</span>`:''}</div></div>`;}).join('')}</div>`:`<div class="empty" style="padding:24px"><div class="empty-t">No bills yet</div></div>`}`;
 }
 
 // ── Reports (Week/Month/Year) ──
@@ -2181,7 +2182,8 @@ function fmtPayMethod(pm){
     'CAP1_CH':'💳 Cap.One_CH',
     'CHASE_CH':'💳 Chase_CH',
     'SPCST_CH':'💳 SpCst_CH',
-    'SPCST_SL_SV':'💳 SpCst_S.L._SV'
+    'SPCST_SL_SV':'💳 SpCst_S.L._SV',
+    'HSA':'🏥 HSA'
   };
   return pm?map[pm]||pm:'';
 }
