@@ -1410,7 +1410,7 @@ function saveBill(){
     share:document.getElementById('f-share').value.trim(),
     category:document.getElementById('f-category').value||'',
     payMethod:document.getElementById('f-paymethod').value||'',
-    ccBalance:document.getElementById('f-category').value==='creditcard'?(parseFloat(document.getElementById('f-cc-balance').value)||0):null,
+    ccBalance:document.getElementById('f-category').value==='creditcard'?(document.getElementById('f-cc-balance').value!==''?parseFloat(document.getElementById('f-cc-balance').value):null):null,
     ccLimit:document.getElementById('f-category').value==='creditcard'?(parseFloat(document.getElementById('f-cc-limit').value)||0):null,
     getNotif:document.getElementById('f-get-notif').checked,
     billRemind:document.getElementById('f-bill-remind').checked,
@@ -1696,7 +1696,7 @@ function renderBillList(){
     const cdBadge = b.endDate ? renderCountdownBadge(b, true) : '';
     const isComplete = b.endDate && getPaymentCountdown(b)?.isComplete;
     const dueDisplay=!isClosed(b)&&!p?.paid&&!p?.prepaid?'Due '+fmtDate(dueStr):'Due '+fmtDate(dueStr);
-    const ccZero=b.category==='creditcard'?(b.ccBalance===0?'$0 🎉':(b.ccBalance>0?('-'+fmtM(b.ccBalance)):null)):null;
+    const ccZero=b.category==='creditcard'&&b.ccBalance!=null?(b.ccBalance===0?'$0 🎉':(b.ccBalance>0?fmtM(b.ccBalance)+' bal':null)):null;
     const pmBadge2=b.payMethod?`<span style="font-size:9px;background:var(--bg4);color:var(--text2);border-radius:4px;padding:1px 5px;margin-left:4px">${fmtPayMethod(b.payMethod)}</span>`:'';    return`<div class="bi ${cls}${isComplete?' is-paid':''}" ${dragAttrs} ${onclickAttr}>${dragHandle}${renderIconWithUrl(b.icon,b.url,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">${b.freq} · ${dueDisplay}${pmBadge2}</div>${cdBadge?`<div style="margin-top:3px">${cdBadge}</div>`:''}</div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div>${ccZero?`<div style="margin-top:2px;text-align:right">${ccZero}</div>`:''}</div></div>`;
   }).join('');
 }
@@ -1719,14 +1719,14 @@ function renderCalendar(){
     const isToday=d===now.getDate()&&calMonth===now.getMonth()&&calYear===now.getFullYear();
     const isPast=new Date(calYear,calMonth,d)<now&&!isToday;
     const bs=billsDueOn(calYear,calMonth,d);
-    const dots=bs.map(b=>{const p=paymentThisMonth(b);const c=p?.prepaid?'var(--info)':p?.paid?'var(--accent)':isOverdue(b)?'var(--danger)':'var(--warn)';return`<div class="cal-dot" style="background:${c}"></div>`;}).join('');
+    const dots=bs.map(b=>{const pk=periodKey(calYear,calMonth);const p=(b.payments||{})[pk];const c=p?.prepaid?'var(--info)':p?.paid?'var(--accent)':isOverdue(b)?'var(--danger)':'var(--warn)';return`<div class="cal-dot" style="background:${c}"></div>`;}).join('');
     const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     html+=`<div class="cal-day ${isToday?'today':''} ${isPast?'past':''} ${bs.length?'has-bill':''}" ${bs.length?`onclick="openCalDay('${ds}')"`:''}><span class="cal-day-num">${d}</span>${dots?`<div class="cal-dots">${dots}</div>`:''}</div>`;
   }
   document.getElementById('cal-days').innerHTML=html;
   const mb=bills.filter(b=>isActiveIn(b,calYear,calMonth)).sort((a,b_)=>new Date(dueDateFor(a,calYear,calMonth))-new Date(dueDateFor(b_,calYear,calMonth)));
   if(!mb.length){document.getElementById('cal-bill-list').innerHTML=`<div class="empty" style="padding:24px"><div class="empty-t">No bills this month</div></div>`;return;}
-  document.getElementById('cal-bill-list').innerHTML=mb.map(b=>{const p=paymentThisMonth(b);const cls=p?.prepaid?'is-prepaid':p?.paid?'is-paid':isOverdue(b)?'is-overdue':'';const badge=p?.prepaid?`<span class="badge b-prepaid">Pre-paid</span>`:p?.paid?`<span class="badge b-paid">Paid</span>`:isOverdue(b)?`<span class="badge b-overdue">Overdue</span>`:'';return`<div class="bi ${cls}" onclick="openDetail(${b.id})">${renderIconWithUrl(b.icon,b.url,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">Due ${fmtDate(dueDateFor(b,calYear,calMonth))}</div></div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div></div></div>`;}).join('');
+  document.getElementById('cal-bill-list').innerHTML=mb.map(b=>{const pk=periodKey(calYear,calMonth);const p=(b.payments||{})[pk];const cls=p?.prepaid?'is-prepaid':p?.paid?'is-paid':isOverdue(b)?'is-overdue':'';const badge=p?.prepaid?`<span class="badge b-prepaid">Pre-paid</span>`:p?.paid?`<span class="badge b-paid">Paid</span>`:isOverdue(b)?`<span class="badge b-overdue">Overdue</span>`:'';return`<div class="bi ${cls}" onclick="openDetail(${b.id})">${renderIconWithUrl(b.icon,b.url,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">Due ${fmtDate(dueDateFor(b,calYear,calMonth))}</div></div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div></div></div>`;}).join('');
 }
 function openCalDay(ds){
   const[y,m,d]=ds.split('-').map(Number);
@@ -1941,6 +1941,8 @@ function renderDebtReport(){
   });
   const catLabels={'house':'🏠 House','insurance':'🛡️ Insurance','car':'🚗 Car','subscription':'📺 Subscriptions','education':'🎓 Education','pets':'🐾 Pets','loan':'💰 Loans','digital':'📱 Digital','creditcard':'💳 Credit Cards','utilities':'💡 Utilities','health':'🏥 Health','other':'📋 Other'};
 
+  // Add uncategorized bills section
+  const uncatBills = bills.filter(b=>!isClosed(b)&&!b.category);
   document.getElementById('ins-debt').innerHTML=`
     <div style="margin-bottom:14px">
       <div style="font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Summary</div>
@@ -1962,6 +1964,17 @@ function renderDebtReport(){
 
     <div style="font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Credit Cards</div>
     <div class="card" style="margin-bottom:14px">${ccRows}</div>
+  ${uncatBills.length?`<div style="font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">⚠️ Uncategorized (${uncatBills.length})</div>
+    <div class="card" style="margin-bottom:14px">
+      ${uncatBills.map(b=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px">${renderIconWithUrl(b.icon,b.url,28)}<span style="font-size:13px">${b.name}</span></div>
+        <span style="font-size:13px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}/mo</span>
+      </div>`).join('')}
+      <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:700">
+        <span style="color:var(--text2)">Tap Edit on each bill to categorize</span>
+        <span style="font-family:var(--mono);color:var(--warn)">${fmtM(uncatBills.reduce((s,b)=>s+b.amount,0))}/mo</span>
+      </div>
+    </div>`:''}
   `;
 }
 
@@ -2311,28 +2324,33 @@ function renderPlannerPaychecks(){
 }
 
 function getExtendedPaydays(){
-  // Get paydays: last of prev month + current month + first of next month
+  const paydays = plannerData.paydays || [];
+  if(!paydays.length) return [];
+  
   const prevY = plannerMonth===0 ? plannerYear-1 : plannerYear;
   const prevM = plannerMonth===0 ? 11 : plannerMonth-1;
   const nextY = plannerMonth===11 ? plannerYear+1 : plannerYear;
   const nextM = plannerMonth===11 ? 0 : plannerMonth+1;
   
-  const prevPrefix = `${prevY}-${String(prevM+1).padStart(2,'0')}`;
-  const currPrefix = `${plannerYear}-${String(plannerMonth+1).padStart(2,'0')}`;
-  const nextPrefix = `${nextY}-${String(nextM+1).padStart(2,'0')}`;
+  const prevPrefix = prevY+'-'+String(prevM+1).padStart(2,'0');
+  const currPrefix = plannerYear+'-'+String(plannerMonth+1).padStart(2,'0');
+  const nextPrefix = nextY+'-'+String(nextM+1).padStart(2,'0');
   
-  const prevPaydays = plannerData.paydays.filter(d=>d.startsWith(prevPrefix));
-  const currPaydays = plannerData.paydays.filter(d=>d.startsWith(currPrefix));
-  const nextPaydays = plannerData.paydays.filter(d=>d.startsWith(nextPrefix));
+  const prevPaydays = paydays.filter(d=>d.startsWith(prevPrefix)).sort();
+  const currPaydays = paydays.filter(d=>d.startsWith(currPrefix)).sort();
+  const nextPaydays = paydays.filter(d=>d.startsWith(nextPrefix)).sort();
+  
+  const fmt = function(d){ return new Date(d+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}); };
   
   const result = [];
-  // Last payday of previous month
-  if(prevPaydays.length) result.push({date: prevPaydays[prevPaydays.length-1], label: '← ' + new Date(prevPaydays[prevPaydays.length-1]+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' (prev month)'});
-  // All current month paydays
-  currPaydays.forEach(d=>result.push({date:d, label: new Date(d+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}));
-  // First payday of next month
-  if(nextPaydays.length) result.push({date: nextPaydays[0], label: new Date(nextPaydays[0]+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' → (next month)'});
-  
+  if(prevPaydays.length){
+    const last = prevPaydays[prevPaydays.length-1];
+    result.push({date:last, label:'⬅ '+fmt(last)+' (prev mo.)'});
+  }
+  currPaydays.forEach(function(d){ result.push({date:d, label:fmt(d)}); });
+  if(nextPaydays.length){
+    result.push({date:nextPaydays[0], label:fmt(nextPaydays[0])+' ➡ (next mo.)'});
+  }
   return result;
 }
 
@@ -2394,7 +2412,8 @@ function loadPlannerFromFirestore(uid){
     firebase.firestore().collection('users').doc(uid).collection('data').doc('planner')
       .get().then(snap=>{
         if(snap.exists){
-          plannerData = Object.assign({paydays:[],assignments:{},notes:''}, snap.data());
+          var loaded = snap.data();
+          plannerData = {paydays:loaded.paydays||[],assignments:loaded.assignments||{},notes:loaded.notes||''};
           localStorage.setItem('am-planner', JSON.stringify(plannerData));
           if(document.getElementById('page-planner').classList.contains('active')){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
         }
