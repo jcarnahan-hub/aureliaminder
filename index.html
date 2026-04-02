@@ -1351,7 +1351,7 @@ function openEdit(id){
   document.getElementById('sh-title').textContent='Edit bill';
   document.getElementById('del-btn').style.display='flex';
   document.getElementById('f-name').value=b.name||'';
-  document.getElementById('f-amount').value=b.amount||'';
+  document.getElementById('f-amount').value=b.amount!=null?b.amount:'';
   document.getElementById('f-freq').value=b.freq||'Monthly';
   document.getElementById('f-start').value=b.startDate||'';
   document.getElementById('f-end').value=b.endDate||'';
@@ -1364,7 +1364,7 @@ function openEdit(id){
   toggleCreditFields();
   const pmEl=document.getElementById('f-paymethod');if(pmEl)pmEl.value=b.payMethod||'';
   if(b.category==='creditcard'){
-    document.getElementById('f-cc-balance').value=b.ccBalance||'';
+    document.getElementById('f-cc-balance').value=b.ccBalance!=null?b.ccBalance:'';
     document.getElementById('f-cc-limit').value=b.ccLimit||'';
     updateCCUtilization();
   }
@@ -1394,10 +1394,11 @@ function clearForm(){
 }
 function saveBill(){
   const name=document.getElementById('f-name').value.trim();
-  const amount=parseFloat(document.getElementById('f-amount').value);
+  const amtRaw=document.getElementById('f-amount').value;
+  const amount=amtRaw===''?null:parseFloat(amtRaw);
   const start=document.getElementById('f-start').value;
   if(!name){alert('Please enter a bill name.');return;}
-  if(!amount||amount<=0){alert('Please enter a valid amount.');return;}
+  if(amount===null||amount===undefined||isNaN(amount)||amount<0){alert('Please enter a valid amount (0 or more).');return;}
   if(!start){alert('Please enter a start date.');return;}
   const bill={
     id:editId||Date.now(), name, amount,
@@ -1410,7 +1411,7 @@ function saveBill(){
     share:document.getElementById('f-share').value.trim(),
     category:document.getElementById('f-category').value||'',
     payMethod:document.getElementById('f-paymethod').value||'',
-    ccBalance:document.getElementById('f-category').value==='creditcard'?(document.getElementById('f-cc-balance').value!==''?parseFloat(document.getElementById('f-cc-balance').value):null):null,
+    ccBalance:document.getElementById('f-category').value==='creditcard'?(document.getElementById('f-cc-balance').value!==''&&document.getElementById('f-cc-balance').value!==null?parseFloat(document.getElementById('f-cc-balance').value):null):null,
     ccLimit:document.getElementById('f-category').value==='creditcard'?(parseFloat(document.getElementById('f-cc-limit').value)||0):null,
     getNotif:document.getElementById('f-get-notif').checked,
     billRemind:document.getElementById('f-bill-remind').checked,
@@ -2447,7 +2448,7 @@ function getCCBadge(b, small=true){
   const color = util ? (util>=90?'var(--danger)':util>=70?'var(--warn)':'var(--danger)') : 'var(--danger)';
   return small
     ? '<span style="font-size:9px;font-weight:700;color:'+color+';background:rgba(239,68,68,.1);border-radius:4px;padding:1px 5px">'+fmtM(b.ccBalance)+(util?' ('+util+'%)':'')+'</span>'
-    : '<span style="font-size:12px;font-weight:700;color:'+color+'">Balance: '+fmtM(b.ccBalance)+(util?' · '+util+'% used':'')+'</span>';
+    : '<span style="font-size:12px;font-weight:700;color:'+color+'">Balance: '+fmtM(b.ccBalance)+(util?' &middot; '+util+'% used':'')+'</span>';
 }
 
 function toggleCreditFields(){
@@ -2898,13 +2899,11 @@ window.addEventListener('load', () => {
         .onSnapshot(function(snap){
           if(snap.exists && !snap.metadata.hasPendingWrites){
             var snapBills = snap.data().bills || [];
-            if(snapBills.length > 0 || bills.length === 0){
-              window.bills = snapBills;
-              bills = window.bills;
-              localStorage.setItem('am-bills', JSON.stringify(window.bills));
-              window.render();
-              if(document.getElementById('page-planner').classList.contains('active')){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
-            }
+            window.bills = snapBills;
+            bills = window.bills;
+            localStorage.setItem('am-bills', JSON.stringify(window.bills));
+            window.render();
+            if(document.getElementById('page-planner').classList.contains('active')){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
           }
         }, function(e){ console.error('Snapshot error:',e); });
 
