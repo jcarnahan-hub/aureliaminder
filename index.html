@@ -962,7 +962,7 @@ function saveCfgToFirestore(){
   } catch(e){ console.log('Firebase not ready for cfg save'); }
 }
 
-function saveBills(){ 
+function saveBills(){
   window.bills = bills;
   localStorage.setItem('am-bills',JSON.stringify(bills));
   console.log('saveBills called, bill count:', bills.length); 
@@ -1463,7 +1463,7 @@ function openDetail(id){
     <div style="padding-bottom:8px">
       ${b.payMethod?`<div class="dr"><span class="dr-lbl">Payment</span><span class="dr-val" style="color:var(--info)">${fmtPayMethod(b.payMethod)}</span></div>`:''}
     ${b.category?`<div class="dr"><span class="dr-lbl">Category</span><span class="dr-val">${{'house':'🏠 House/Mortgage','insurance':'🛡️ Insurance','car':'🚗 Car/Auto','subscription':'📺 Subscription','education':'🎓 Education','pets':'🐾 Pets','loan':'💰 Loan','digital':'📱 Digital Services','creditcard':'💳 Credit Card','utilities':'💡 Utilities','health':'🏥 Health/Medical','other':'📋 Other'}[b.category]||b.category}</span></div>`:''}
-    ${b.category==='creditcard'&&b.ccBalance!=null?`<div class="dr"><span class="dr-lbl">CC Balance</span><span class="dr-val" style="color:var(--danger)">${fmtM(b.ccBalance)}</span></div>`:''}
+    ${b.category==='creditcard'&&b.ccBalance!=null?`<div class="dr"><span class="dr-lbl">CC Balance</span><span class="dr-val">${getCCBadge(b,false)}</span></div>`:''}
     ${b.category==='creditcard'&&b.ccLimit?`<div class="dr"><span class="dr-lbl">Credit Limit</span><span class="dr-val">${fmtM(b.ccLimit)}</span></div>`:''}
     ${b.category==='creditcard'&&b.ccBalance!=null&&b.ccLimit?`<div class="dr"><span class="dr-lbl">Utilization</span><span class="dr-val" style="color:${Math.round((b.ccBalance/b.ccLimit)*100)>=70?'var(--warn)':'var(--accent)'}">${Math.round((b.ccBalance/b.ccLimit)*100)}%</span></div>`:''}
     <div class="dr"><span class="dr-lbl">Start date</span><span class="dr-val">${fmtDate(b.startDate)}</span></div>
@@ -1696,8 +1696,8 @@ function renderBillList(){
     const cdBadge = b.endDate ? renderCountdownBadge(b, true) : '';
     const isComplete = b.endDate && getPaymentCountdown(b)?.isComplete;
     const dueDisplay=!isClosed(b)&&!p?.paid&&!p?.prepaid?'Due '+fmtDate(dueStr):'Due '+fmtDate(dueStr);
-    const ccZero=b.category==='creditcard'&&b.ccBalance!=null?(b.ccBalance===0?'$0 🎉':(b.ccBalance>0?fmtM(b.ccBalance)+' bal':null)):null;
-    const pmBadge2=b.payMethod?`<span style="font-size:9px;background:var(--bg4);color:var(--text2);border-radius:4px;padding:1px 5px;margin-left:4px">${fmtPayMethod(b.payMethod)}</span>`:'';    return`<div class="bi ${cls}${isComplete?' is-paid':''}" ${dragAttrs} ${onclickAttr}>${dragHandle}${renderIconWithUrl(b.icon,b.url,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">${b.freq} · ${dueDisplay}${pmBadge2}</div>${cdBadge?`<div style="margin-top:3px">${cdBadge}</div>`:''}</div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div>${ccZero?`<div style="margin-top:2px;text-align:right">${ccZero}</div>`:''}</div></div>`;
+    const ccZeroStr=getCCBadge(b,true);
+    const pmBadge2=b.payMethod?`<span style="font-size:9px;background:var(--bg4);color:var(--text2);border-radius:4px;padding:1px 5px;margin-left:4px">${fmtPayMethod(b.payMethod)}</span>`:'';    return`<div class="bi ${cls}${isComplete?' is-paid':''}" ${dragAttrs} ${onclickAttr}>${dragHandle}${renderIconWithUrl(b.icon,b.url,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">${b.freq} · ${dueDisplay}${pmBadge2}</div>${cdBadge?`<div style="margin-top:3px">${cdBadge}</div>`:''}</div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div>${ccZeroStr?`<div style="margin-top:2px;text-align:right">${ccZeroStr}</div>`:''}</div></div>`;
   }).join('');
 }
 
@@ -1791,7 +1791,7 @@ function renderOverview(y,m,now){
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input type="text" id="ins-search" placeholder="Search bills..." oninput="renderInsights()">
     </div>
-    ${insBills.filter(b=>{const q=(document.getElementById('ins-search')||{}).value||'';return !q||b.name.toLowerCase().includes(q.toLowerCase());}).length?`<div class="card">${[...insBills].filter(b=>{const q=(document.getElementById('ins-search')||{}).value||'';return !q||b.name.toLowerCase().includes(q.toLowerCase());}).sort((a,b_)=>b_.amount-a.amount).map(b=>{const p=paymentThisMonth(b);return`<div class="wr-row" onclick="openDetail(${b.id})" style="cursor:pointer"><div style="display:flex;align-items:center;gap:10px">${renderIconWithUrl(b.icon,b.url,30)}<div><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">${b.freq}${totalInc?' · '+(b.amount/totalInc*100<1?(b.amount/totalInc*100).toFixed(1):Math.round(b.amount/totalInc*100))+'%':''}</div></div></div><div style="text-align:right"><div style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}</div>${p?.prepaid?`<span class="badge b-prepaid" style="font-size:9px">Pre-paid ✓</span>`:p?.paid?`<span style="font-size:10px;font-weight:700;color:#60a5fa">✓ Paid</span>`:''}</div></div>`;}).join('')}</div>`:`<div class="empty" style="padding:24px"><div class="empty-t">No bills found</div></div>` }`;  
+    ${insBills.filter(b=>{const q=(document.getElementById('ins-search')||{}).value||'';return !q||b.name.toLowerCase().includes(q.toLowerCase());}).length?`<div class="card">${[...insBills].filter(b=>{const q=(document.getElementById('ins-search')||{}).value||'';return !q||b.name.toLowerCase().includes(q.toLowerCase());}).sort((a,b_)=>b_.amount-a.amount).map(b=>{const p=paymentThisMonth(b);return`<div class="wr-row" onclick="openDetail(${b.id})" style="cursor:pointer"><div style="display:flex;align-items:center;gap:10px">${renderIconWithUrl(b.icon,b.url,30)}<div><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">${b.freq}${totalInc?' · '+(b.amount/totalInc*100<1?(b.amount/totalInc*100).toFixed(1):Math.round(b.amount/totalInc*100))+'%':''}</div></div></div><div style="text-align:right"><div style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}</div>${p?.prepaid?`<span class="badge b-prepaid" style="font-size:9px">Pre-paid ✓</span>`:p?.paid?`<span style="font-size:10px;font-weight:700;color:#60a5fa">✓ Paid</span>`:''}</div>${getCCBadge(b)?`<div style="margin-top:2px">${getCCBadge(b)}</div>`:''}</div></div>`;}).join('')}</div>`:`<div class="empty" style="padding:24px"><div class="empty-t">No bills found</div></div>` }`;  
 }
 
 // ── Reports (Week/Month/Year) ──
@@ -2433,6 +2433,21 @@ function fmtPayMethod(pm){
     'HSA':'🏥 HSA'
   };
   return pm?map[pm]||pm:'';
+}
+
+
+function getCCBadge(b, small=true){
+  if(b.category!=='creditcard' || b.ccBalance==null) return '';
+  if(b.ccBalance===0){
+    return small 
+      ? '<span style="font-size:9px;font-weight:700;color:var(--accent);background:rgba(34,211,160,.1);border-radius:4px;padding:1px 5px">$0 🎉</span>'
+      : '<span style="font-size:12px;font-weight:700;color:var(--accent)">$0 🎉 Paid off!</span>';
+  }
+  const util = b.ccLimit ? Math.round((b.ccBalance/b.ccLimit)*100) : null;
+  const color = util ? (util>=90?'var(--danger)':util>=70?'var(--warn)':'var(--danger)') : 'var(--danger)';
+  return small
+    ? '<span style="font-size:9px;font-weight:700;color:'+color+';background:rgba(239,68,68,.1);border-radius:4px;padding:1px 5px">'+fmtM(b.ccBalance)+(util?' ('+util+'%)':'')+'</span>'
+    : '<span style="font-size:12px;font-weight:700;color:'+color+'">Balance: '+fmtM(b.ccBalance)+(util?' · '+util+'% used':'')+'</span>';
 }
 
 function toggleCreditFields(){
