@@ -414,6 +414,7 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
     <button class="ins-tab" id="itab-debt" onclick="switchInsTab('debt',this)" style="flex:1;padding:7px;border-radius:var(--radius-sm);background:var(--bg3);color:var(--text2);border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Debt</button>
   </div>
   <div class="inner" style="padding-top:14px">
+    <div id="today-summary" class="card" style="margin:0 0 12px;display:none"></div>
     <div id="ins-overview"></div>
     <div id="ins-weekly" style="display:none"></div>
     <div id="ins-charts" style="display:none"></div>
@@ -516,6 +517,14 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
 
     <div class="card" style="margin-top:9px">
       <div class="stitle">Reminders</div>
+      <div class="srow" onclick="sendEmailReminder()" style="cursor:pointer">
+        <div style="display:flex;align-items:center"><div class="sico" style="background:rgba(59,130,246,.15)">📧</div><div><div class="slbl">Email me a reminder</div><div class="ssub">Send bill summary to your email now</div></div></div>
+        <span class="chev">›</span>
+      </div>
+      <div class="srow" onclick="openReminderSchedule()" style="cursor:pointer">
+        <div style="display:flex;align-items:center"><div class="sico" style="background:rgba(139,92,246,.15)">🗓</div><div><div class="slbl">Auto-prompt schedule</div><div class="ssub" id="s-reminder-schedule-lbl">Not set</div></div></div>
+        <span class="chev">›</span>
+      </div>
       <div class="tr">
         <div><div class="tl">Enable reminders</div><div class="ts">Show in-app alerts before bills are due</div></div>
         <label class="tg"><input type="checkbox" id="s-notif" checked onchange="saveCfg();renderNotifBanners()"><div class="tt"></div><div class="tk"></div></label>
@@ -571,6 +580,7 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
 <!-- ══ NAV ══ -->
 <nav style="display:none">
   <button class="nb active" id="nb-insights" onclick="showPage('insights')">
+    <div id="insights-nav-badge" class="notif-badge" style="display:none"></div>
     <svg viewBox="0 0 22 22" fill="none"><path d="M4 16l4-4 3 3 6-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="3" width="16" height="16" rx="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
     <span>Insights</span>
   </button>
@@ -579,6 +589,7 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
     <span>Calendar</span>
   </button>
   <button class="nb" id="nb-bills" onclick="showPage('bills')">
+    <div id="bills-nav-badge" class="notif-badge" style="display:none"></div>
     <svg viewBox="0 0 22 22" fill="none"><rect x="3" y="3" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M7 8h8M7 11h8M7 14h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     <span>Bills</span>
   </button>
@@ -805,6 +816,71 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
     </div>
   </div>
 </div>
+
+<!-- ══ REMINDER SCHEDULE SHEET ══ -->
+<div class="overlay" id="reminder-schedule-sheet">
+  <div class="sheet"><div class="shandle"></div>
+    <div style="background:rgba(34,211,160,.08);border:1px solid rgba(34,211,160,.2);border-radius:8px;padding:7px 12px;margin:8px 16px 0;font-size:11px;color:var(--text2)">💡 Tap outside this panel to close. Avoid the browser back button.</div>
+    <div class="shd"><h2>Auto-prompt Schedule</h2><button class="shclose" onclick="closeSheet('reminder-schedule-sheet')">×</button></div>
+    <div class="sbody">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:16px">When you open AureliaMinder on a scheduled day, it will automatically prompt you to send an email reminder.</p>
+      
+      <div class="fg">
+        <label>Remind me on</label>
+        <select id="rs-type" onchange="toggleReminderOptions()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-xs);padding:10px 12px;font-size:13px;color:var(--text);font-family:var(--font);outline:none;width:100%">
+          <option value="">-- No auto-prompt --</option>
+          <option value="daily">Every day</option>
+          <option value="weekly">Every week on a specific day</option>
+          <option value="biweekly">Every 2 weeks (payday)</option>
+          <option value="monthly">Monthly on a specific day</option>
+          <option value="beforepayday">X days before each payday</option>
+        </select>
+      </div>
+
+      <div id="rs-weekly-opts" style="display:none" class="fg">
+        <label>Day of week</label>
+        <select id="rs-weekday" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-xs);padding:10px 12px;font-size:13px;color:var(--text);font-family:var(--font);outline:none;width:100%">
+          <option value="0">Sunday</option>
+          <option value="1">Monday</option>
+          <option value="2">Tuesday</option>
+          <option value="3">Wednesday</option>
+          <option value="4">Thursday</option>
+          <option value="5">Friday</option>
+          <option value="6">Saturday</option>
+        </select>
+      </div>
+
+      <div id="rs-monthly-opts" style="display:none" class="fg">
+        <label>Day of month</label>
+        <select id="rs-monthday" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-xs);padding:10px 12px;font-size:13px;color:var(--text);font-family:var(--font);outline:none;width:100%">
+          ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28].map(d=>`<option value="${d}">${d}${d===1?'st':d===2?'nd':d===3?'rd':'th'}</option>`).join('')}
+        </select>
+      </div>
+
+      <div id="rs-beforepay-opts" style="display:none" class="fg">
+        <label>Days before payday</label>
+        <select id="rs-daysbefore" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-xs);padding:10px 12px;font-size:13px;color:var(--text);font-family:var(--font);outline:none;width:100%">
+          <option value="1">1 day before</option>
+          <option value="2">2 days before</option>
+          <option value="3">3 days before</option>
+          <option value="5">5 days before</option>
+          <option value="7">7 days before</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <label>Also remind if bills are overdue</label>
+        <div class="tr" style="padding:0;background:none;border:none">
+          <div><div class="ts">Always prompt when overdue bills exist</div></div>
+          <label class="tg"><input type="checkbox" id="rs-overdue" checked><div class="tt"></div><div class="tk"></div></label>
+        </div>
+      </div>
+
+      <button class="btn btn-accent btn-full" onclick="saveReminderSchedule()" style="margin-top:8px">Save schedule</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ SALARY SHEET ══ -->
 <div class="overlay" id="salary-sheet">
   <div class="sheet"><div class="shandle"></div>
@@ -1475,6 +1551,37 @@ function toggleMoreReminders(){
   }
 }
 
+function updateAppBadge(){
+  bills = window.bills;
+  const overdue = bills.filter(b=>!isClosed(b)&&isOverdue(b)).length;
+  const dueSoon = bills.filter(b=>!isClosed(b)&&!isOverdue(b)&&daysUntilDue(b)<=3).length;
+  const total = overdue + dueSoon;
+  // Update document title with count
+  if(total>0){
+    document.title = '('+total+') AureliaMinder';
+  } else {
+    document.title = 'AureliaMinder';
+  }
+  // Update nav badge on Bills tab
+  const badge = document.getElementById('bills-nav-badge');
+  if(badge){
+    if(overdue>0){
+      badge.style.display='block';
+      badge.style.background='var(--danger)';
+      badge.title = overdue+' overdue';
+    } else if(dueSoon>0){
+      badge.style.display='block';
+      badge.style.background='var(--warn)';
+      badge.title = dueSoon+' due soon';
+    } else {
+      badge.style.display='none';
+    }
+  }
+  // Update Insights nav badge
+  const ibadge = document.getElementById('insights-nav-badge');
+  if(ibadge) ibadge.style.display = total>0?'block':'none';
+}
+
 function renderNotifBanners(){
   const container=document.getElementById('notif-banners');
   if(!cfg.notif){container.innerHTML='';return;}
@@ -1927,6 +2034,8 @@ window.renderSettingsUI = function renderSettingsUI(){
   const fmtD=d=>{if(!d)return'Not set';const[y,m,dd]=d.split('-');return`${m}/${dd}/${y}`;};
   document.getElementById('s-salary-lbl').textContent=fmtM2(cfg.salary);
   document.getElementById('s-paydate-lbl').textContent=fmtD(cfg.payDate);
+  const rsEl=document.getElementById('s-reminder-schedule-lbl');
+  if(rsEl) rsEl.textContent=getReminderScheduleLabel();
   const extraEl=document.getElementById('s-extra-income-lbl');
   if(extraEl){
     const sources=cfg.extraIncome||[];
@@ -2411,6 +2520,155 @@ function getTotalExtraIncome(){
   return (cfg.extraIncome||[]).reduce((s,e)=>s+(e.amount||0),0);
 }
 
+
+function sendEmailReminder(){
+  bills = window.bills;
+  const overdue = bills.filter(b=>!isClosed(b)&&isOverdue(b));
+  const dueSoon = bills.filter(b=>!isClosed(b)&&daysUntilDue(b)>=0&&daysUntilDue(b)<=7);
+  
+  if(!overdue.length && !dueSoon.length){
+    alert('No urgent bills to remind about! Everything is on track. ✅');
+    return;
+  }
+  
+  const user = firebase.auth().currentUser;
+  const email = user ? user.email : '';
+  
+  let body = 'AureliaMinder Bill Reminder\n\n';
+  if(overdue.length){
+    body += '🚨 OVERDUE BILLS:\n';
+    overdue.forEach(b=>{ body += '• '+b.name+' - '+fmtM(b.amount)+'\n'; });
+    body += '\n';
+  }
+  if(dueSoon.length){
+    body += '⏰ DUE WITHIN 7 DAYS:\n';
+    dueSoon.forEach(b=>{ 
+      const d=daysUntilDue(b);
+      body += '• '+b.name+' - '+fmtM(b.amount)+' ('+( d===0?'today':d===1?'tomorrow':'in '+d+' days')+')\n';
+    });
+  }
+  body += '\nTotal: '+fmtM([...overdue,...dueSoon].reduce((s,b)=>s+b.amount,0));
+  body += '\n\nSent from AureliaMinder';
+  
+  const subject = encodeURIComponent('AureliaMinder: '+( overdue.length?overdue.length+' Overdue Bill'+(overdue.length!==1?'s':''):'Bills Due Soon'));
+  const bodyEnc = encodeURIComponent(body);
+  window.location.href = 'mailto:'+email+'?subject='+subject+'&body='+bodyEnc;
+}
+
+
+// ══════════════════════════════════════════
+//  REMINDER SCHEDULE
+// ══════════════════════════════════════════
+function openReminderSchedule(){
+  cfg = window.cfg;
+  const rs = cfg.reminderSchedule || {};
+  const typeEl = document.getElementById('rs-type');
+  if(typeEl) typeEl.value = rs.type||'';
+  const wdEl = document.getElementById('rs-weekday');
+  if(wdEl) wdEl.value = rs.weekday||'5'; // Friday default
+  const mdEl = document.getElementById('rs-monthday');
+  if(mdEl) mdEl.value = rs.monthday||'1';
+  const dbEl = document.getElementById('rs-daysbefore');
+  if(dbEl) dbEl.value = rs.daysBefore||'3';
+  const odEl = document.getElementById('rs-overdue');
+  if(odEl) odEl.checked = rs.alwaysOverdue!==false;
+  toggleReminderOptions();
+  openSheet('reminder-schedule-sheet');
+}
+
+function toggleReminderOptions(){
+  const type = document.getElementById('rs-type').value;
+  document.getElementById('rs-weekly-opts').style.display   = type==='weekly'?'block':'none';
+  document.getElementById('rs-monthly-opts').style.display  = type==='monthly'?'block':'none';
+  document.getElementById('rs-beforepay-opts').style.display= type==='beforepayday'?'block':'none';
+}
+
+function saveReminderSchedule(){
+  cfg = window.cfg;
+  const type = document.getElementById('rs-type').value;
+  const rs = {
+    type: type,
+    weekday: parseInt(document.getElementById('rs-weekday').value)||5,
+    monthday: parseInt(document.getElementById('rs-monthday').value)||1,
+    daysBefore: parseInt(document.getElementById('rs-daysbefore').value)||3,
+    alwaysOverdue: document.getElementById('rs-overdue').checked
+  };
+  window.cfg.reminderSchedule = rs;
+  cfg = window.cfg;
+  localStorage.setItem('am-cfg', JSON.stringify(cfg));
+  saveCfgToFirestore();
+  document.getElementById('reminder-schedule-sheet').classList.remove('open');
+  window.renderSettingsUI();
+  // Save last prompt date so we don't prompt again today
+  localStorage.setItem('am-last-reminder-prompt', new Date().toISOString().split('T')[0]);
+}
+
+function getReminderScheduleLabel(){
+  cfg = window.cfg;
+  const rs = cfg.reminderSchedule;
+  if(!rs||!rs.type) return 'Not set';
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  if(rs.type==='daily') return 'Every day';
+  if(rs.type==='weekly') return 'Every '+days[rs.weekday||5];
+  if(rs.type==='biweekly') return 'Every 2 weeks (payday)';
+  if(rs.type==='monthly') return 'Monthly on the '+(rs.monthday||1)+(rs.monthday===1?'st':rs.monthday===2?'nd':rs.monthday===3?'rd':'th');
+  if(rs.type==='beforepayday') return (rs.daysBefore||3)+' days before payday';
+  return 'Not set';
+}
+
+function checkReminderSchedule(){
+  cfg = window.cfg;
+  bills = window.bills;
+  const rs = cfg.reminderSchedule;
+  if(!rs||!rs.type) return;
+  
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const lastPrompt = localStorage.getItem('am-last-reminder-prompt')||'';
+  if(lastPrompt === todayStr) return; // Already prompted today
+  
+  let shouldPrompt = false;
+  const overdue = bills.filter(b=>!isClosed(b)&&isOverdue(b));
+  
+  // Check if overdue override applies
+  if(rs.alwaysOverdue && overdue.length>0) shouldPrompt = true;
+  
+  // Check schedule
+  if(!shouldPrompt){
+    if(rs.type==='daily') shouldPrompt = true;
+    else if(rs.type==='weekly') shouldPrompt = today.getDay()===(rs.weekday||5);
+    else if(rs.type==='biweekly'){
+      // Check if today is a payday
+      const todayFull = todayStr;
+      shouldPrompt = (plannerData.paydays||[]).includes(todayFull);
+    }
+    else if(rs.type==='monthly') shouldPrompt = today.getDate()===(rs.monthday||1);
+    else if(rs.type==='beforepayday'){
+      // Check if any payday is X days away
+      const target = new Date(today);
+      target.setDate(today.getDate()+(rs.daysBefore||3));
+      const targetStr = target.toISOString().split('T')[0];
+      shouldPrompt = (plannerData.paydays||[]).includes(targetStr);
+    }
+  }
+  
+  if(shouldPrompt){
+    const dueSoon = bills.filter(b=>!isClosed(b)&&daysUntilDue(b)>=0&&daysUntilDue(b)<=7);
+    const total = overdue.length + dueSoon.length;
+    if(total===0) return;
+    
+    // Show prompt after short delay
+    setTimeout(function(){
+      const msg = (overdue.length?overdue.length+' overdue bill'+(overdue.length!==1?'s':'')+' and ':'')+
+                  (dueSoon.length?dueSoon.length+' bill'+(dueSoon.length!==1?'s':'')+' due within 7 days':'');
+      if(confirm('📧 AureliaMinder Reminder\n\nYou have '+msg+'.\n\nWould you like to send yourself an email summary now?')){
+        sendEmailReminder();
+      }
+      localStorage.setItem('am-last-reminder-prompt', todayStr);
+    }, 2000);
+  }
+}
+
 // ══════════════════════════════════════════
 //  DRAG AND DROP
 // ══════════════════════════════════════════
@@ -2460,6 +2718,7 @@ window.render = function render(){
   bills = window.bills; cfg = window.cfg; // sync before render
   renderBillList();
   renderNotifBanners();
+  updateAppBadge();
   if(document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
   if(document.getElementById('page-insights').classList.contains('active')) renderInsights();
   if(document.getElementById('page-planner').classList.contains('active')){ setTimeout(function(){ bills=window.bills; renderPlanner(); }, 50); }
@@ -2581,7 +2840,7 @@ window.addEventListener('load', () => {
           localStorage.setItem('am-bills', JSON.stringify(window.bills));
           console.log('✅ Loaded from Firestore, count:', bills.length);
         loadPlannerFromFirestore(user.uid);
-        setTimeout(function(){ bills=window.bills; renderPlannerPaychecks(); renderPlannerUnassigned(); }, 500);
+        setTimeout(function(){ bills=window.bills; renderPlannerPaychecks(); renderPlannerUnassigned(); checkReminderSchedule(); }, 2500);
         } else { console.log('No bills in Firestore yet'); }
         const cfgSnap = await db.collection('users').doc(user.uid).collection('data').doc('config').get();
         if(cfgSnap.exists){
