@@ -2290,23 +2290,27 @@ function assignBill(billId, paycheckDate){
 
 function renderPlannerPaychecks(){
   bills = window.bills; // always sync
-  const paydays = getPlannerPaydays();
+  const extPaydays = getExtendedPaydays();
   const salary  = cfg.salary || 0;
   const container = document.getElementById('planner-paychecks');
-  if(!paydays.length){
+  if(!extPaydays.length){
     container.innerHTML=`<div style="grid-column:span 2;text-align:center;padding:20px;color:var(--text2);font-size:13px">
       Mark your paydays on the calendar above 💰
     </div>`;
     return;
   }
+  const currPrefix = plannerYear+'-'+String(plannerMonth+1).padStart(2,'0');
   const n=new Date(); const y=n.getFullYear(); const m=n.getMonth();
-  container.innerHTML = paydays.map(pd=>{
+  container.innerHTML = extPaydays.map(item=>{
+    const pd = item.date;
+    const isOtherMonth = !pd.startsWith(currPrefix);
     const assigned = (plannerData.assignments[pd]||[]);
     const assignedBills = assigned.map(id=>bills.find(b=>b.id==id)).filter(Boolean);
     const total = assignedBills.reduce((s,b)=>s+parseFloat(b.amount||0),0);
     const remaining = salary - total;
     const overBudget = salary>0 && remaining<0;
     const dateLabel = new Date(pd+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const monthTag = isOtherMonth ? `<span style="font-size:10px;color:var(--text3);font-weight:500;margin-left:5px">${item.label.includes('prev') ? '← prev' : 'next →'}</span>` : '';
     const billRows = assignedBills.map(b=>`
       <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
         ${renderIconWithUrl(b.icon,b.url,28)}
@@ -2316,10 +2320,10 @@ function renderPlannerPaychecks(){
         <div style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--danger)">-${fmtM(b.amount)}</div>
         <button onclick="assignBill(${b.id},null)" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 2px" title="Remove">×</button>
       </div>`).join('');
-    return`<div class="card" style="padding:12px">
+    return`<div class="card" style="padding:12px${isOtherMonth?';opacity:0.75;border-style:dashed':''}">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div>
-          <div style="font-size:13px;font-weight:700;color:var(--accent)">💰 ${dateLabel}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--accent)">💰 ${dateLabel}${monthTag}</div>
           ${salary>0?`<div style="font-size:11px;color:var(--text2)">${fmtM(salary)} paycheck</div>`:''}
         </div>
         ${salary>0?`<div style="font-size:13px;font-weight:700;color:${overBudget?'var(--danger)':'var(--accent)'}">${overBudget?'Over by ':'Left: '}${fmtM(Math.abs(remaining))}</div>`:''}
