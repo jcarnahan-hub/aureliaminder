@@ -719,6 +719,7 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
           <option value="SPCST_CH">💳 SpCst Checking: AutoPay</option>
           <option value="SPCST_SL_SV">💳 SpCst S.L. Savings: AutoPay</option>
           <option value="HSA">🏥 HSA: AutoPay</option>
+          <option value="MISC">🗂️ Miscellaneous</option>
         </select>
       </div>
 
@@ -2449,7 +2450,8 @@ function fmtPayMethod(pm){
     'CHASE_CH':'💳 Chase_CH',
     'SPCST_CH':'💳 SpCst_CH',
     'SPCST_SL_SV':'💳 SpCst_S.L._SV',
-    'HSA':'🏥 HSA'
+    'HSA':'🏥 HSA',
+    'MISC':'🗂️ Miscellaneous'
   };
   return pm?map[pm]||pm:'';
 }
