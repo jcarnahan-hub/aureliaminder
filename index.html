@@ -1685,7 +1685,7 @@ function renderBillList(){
     const n2=new Date(),dueStr=dueDateFor(b,n2.getFullYear(),n2.getMonth());
     let badge='';
     if(closed) badge=`<span class="badge b-closed">Closed</span>`;
-    else if(p?.prepaid) badge=`<span class="badge b-prepaid">Pre-paid</span>`;
+    else if(p?.prepaid) badge=`<span class="badge b-prepaid">Pre-paid · ${fmtDate(p.prepaidDate)}</span>`;
     else if(p?.paid) badge=`<span class="badge b-paid">Paid</span>`;
     else if(overdue) badge=`<span class="badge b-overdue">Overdue</span>`;
     else if(du===0) badge=`<span class="badge b-overdue">Due today</span>`;
@@ -1701,7 +1701,7 @@ function renderBillList(){
     const ccZeroStr=b.category==='creditcard'&&(b.ccBalance===0||b.ccBalance==='0')?getCCBadge(b,true):'';
     const pmBadge2=b.payMethod?`<span style="font-size:9px;background:var(--bg4);color:var(--text2);border-radius:4px;padding:1px 5px;margin-left:4px">${fmtPayMethod(b.payMethod)}</span>`:'';
     // Right side: amount + status badge on same line, clean layout matching Insights
-    const statusBadge = p?.prepaid?`<span style="font-size:10px;font-weight:700;color:var(--info)">Pre-paid ✓</span>`:
+    const statusBadge = p?.prepaid?`<span style="font-size:10px;font-weight:700;color:var(--info)">Pre-paid ${fmtDate(p.prepaidDate)} ✓</span>`:
                         p?.paid?`<span style="font-size:10px;font-weight:700;color:#60a5fa">✓ Paid</span>`:
                         overdue?`<span style="font-size:10px;font-weight:700;color:var(--danger)">Overdue</span>`:
                         du===0?`<span style="font-size:10px;font-weight:700;color:var(--warn)">Due today</span>`:'';
@@ -1734,7 +1734,7 @@ function renderCalendar(){
   document.getElementById('cal-days').innerHTML=html;
   const mb=bills.filter(b=>isActiveIn(b,calYear,calMonth)).sort((a,b_)=>new Date(dueDateFor(a,calYear,calMonth))-new Date(dueDateFor(b_,calYear,calMonth)));
   if(!mb.length){document.getElementById('cal-bill-list').innerHTML=`<div class="empty" style="padding:24px"><div class="empty-t">No bills this month</div></div>`;return;}
-  document.getElementById('cal-bill-list').innerHTML=mb.map(b=>{const pk=periodKey(calYear,calMonth);const p=(b.payments||{})[pk];const cls=p?.prepaid?'is-prepaid':p?.paid?'is-paid':isOverdue(b)?'is-overdue':'';const badge=p?.prepaid?`<span class="badge b-prepaid">Pre-paid</span>`:p?.paid?`<span class="badge b-paid">Paid</span>`:isOverdue(b)?`<span class="badge b-overdue">Overdue</span>`:'';return`<div class="bi ${cls}" onclick="openDetail(${b.id})">${renderIconWithUrl(b.icon,b.url,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">Due ${fmtDate(dueDateFor(b,calYear,calMonth))}</div></div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div></div></div>`;}).join('');
+  document.getElementById('cal-bill-list').innerHTML=mb.map(b=>{const pk=periodKey(calYear,calMonth);const p=(b.payments||{})[pk];const cls=p?.prepaid?'is-prepaid':p?.paid?'is-paid':isOverdue(b)?'is-overdue':'';const badge=p?.prepaid?`<span class="badge b-prepaid">Pre-paid · ${fmtDate(p.prepaidDate)}</span>`:p?.paid?`<span class="badge b-paid">Paid</span>`:isOverdue(b)?`<span class="badge b-overdue">Overdue</span>`:'';return`<div class="bi ${cls}" onclick="openDetail(${b.id})">${renderIconWithUrl(b.icon,b.url,42)}<div class="binfo"><div class="bname">${b.name}</div><div class="bsub">Due ${fmtDate(dueDateFor(b,calYear,calMonth))}</div></div><div class="bright"><div class="bamt">${fmtM(b.amount)}</div><div class="bduerow">${badge}</div></div></div>`;}).join('');
 }
 function openCalDay(ds){
   const[y,m,d]=ds.split('-').map(Number);
@@ -1799,7 +1799,7 @@ function renderOverview(y,m,now){
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input type="text" id="ins-search" placeholder="Search bills..." oninput="renderInsights()">
     </div>
-    ${insBills.filter(b=>{const q=(document.getElementById('ins-search')||{}).value||'';return !q||b.name.toLowerCase().includes(q.toLowerCase());}).length?`<div class="card">${[...insBills].filter(b=>{const q=(document.getElementById('ins-search')||{}).value||'';return !q||b.name.toLowerCase().includes(q.toLowerCase());}).sort((a,b_)=>b_.amount-a.amount).map(b=>{const p=paymentThisMonth(b);return`<div class="wr-row" onclick="openDetail(${b.id})" style="cursor:pointer"><div style="display:flex;align-items:center;gap:10px">${renderIconWithUrl(b.icon,b.url,30)}<div><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">${b.freq}${totalInc?' · '+(b.amount/totalInc*100<1?(b.amount/totalInc*100).toFixed(1):Math.round(b.amount/totalInc*100))+'%':''}</div></div></div><div style="text-align:right"><div style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}</div>${p?.prepaid?`<span style="font-size:10px;font-weight:700;color:var(--info)">Pre-paid ✓</span>`:p?.paid?`<span style="font-size:10px;font-weight:700;color:#60a5fa">✓ Paid</span>`:isOverdue(b)?`<span style="font-size:10px;font-weight:700;color:var(--danger)">Overdue</span>`:daysUntilDue(b)===0?`<span style="font-size:10px;font-weight:700;color:var(--warn)">Due today</span>`:''}</div>${b.category==='creditcard'&&b.ccBalance===0?`<div style="margin-top:2px">${getCCBadge(b)}</div>`:''}</div></div>`;}).join('')}</div>`:`<div class="empty" style="padding:24px"><div class="empty-t">No bills found</div></div>` }`;  
+    ${insBills.filter(b=>{const q=(document.getElementById('ins-search')||{}).value||'';return !q||b.name.toLowerCase().includes(q.toLowerCase());}).length?`<div class="card">${[...insBills].filter(b=>{const q=(document.getElementById('ins-search')||{}).value||'';return !q||b.name.toLowerCase().includes(q.toLowerCase());}).sort((a,b_)=>b_.amount-a.amount).map(b=>{const p=paymentThisMonth(b);return`<div class="wr-row" onclick="openDetail(${b.id})" style="cursor:pointer"><div style="display:flex;align-items:center;gap:10px">${renderIconWithUrl(b.icon,b.url,30)}<div><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">${b.freq}${totalInc?' · '+(b.amount/totalInc*100<1?(b.amount/totalInc*100).toFixed(1):Math.round(b.amount/totalInc*100))+'%':''}</div></div></div><div style="text-align:right"><div style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}</div>${p?.prepaid?`<span style="font-size:10px;font-weight:700;color:var(--info)">Pre-paid ${fmtDate(p.prepaidDate)} ✓</span>`:p?.paid?`<span style="font-size:10px;font-weight:700;color:#60a5fa">✓ Paid</span>`:isOverdue(b)?`<span style="font-size:10px;font-weight:700;color:var(--danger)">Overdue</span>`:daysUntilDue(b)===0?`<span style="font-size:10px;font-weight:700;color:var(--warn)">Due today</span>`:''}</div>${b.category==='creditcard'&&b.ccBalance===0?`<div style="margin-top:2px">${getCCBadge(b)}</div>`:''}</div></div>`;}).join('')}</div>`:`<div class="empty" style="padding:24px"><div class="empty-t">No bills found</div></div>` }`;  
 }
 
 // ── Reports (Week/Month/Year) ──
@@ -1905,7 +1905,7 @@ function renderWeeklyReport(){
     </div>
     ${reportOffset===0&&overdueList.length?`<div class="sh"><h2>Overdue</h2></div><div class="card" style="border-color:rgba(239,68,68,.3);margin-bottom:12px">${overdueList.map(b=>`<div class="wr-row"><div style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer" onclick="openDetail(${b.id})">${renderIconWithUrl(b.icon,b.url,30)}<div><div style="font-size:13px;font-weight:600;color:var(--danger)">${b.name}</div><div style="font-size:11px;color:var(--text2)">Was due ${fmtDate(dueDateFor(b,now.getFullYear(),now.getMonth()))}</div></div></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}</span><button class="btn btn-accent" style="padding:5px 10px;font-size:11px" onclick="openPaySheet(${b.id})">Pay</button></div></div>`).join('')}</div>`:''}
     <!-- Bill Groups -->
-    ${Object.keys(groups).length?Object.entries(groups).map(([lbl,bs])=>`<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">${lbl}</div><div class="card">${bs.filter((b,i,a)=>a.findIndex(x=>x.id===b.id)===i).map(b=>{const p=paymentThisMonth(b);return`<div class="wr-row"><div style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer" onclick="openDetail(${b.id})">${renderIconWithUrl(b.icon,b.url,30)}<div><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">${b.freq} · ${fmtM(b.amount)}</div></div></div><div style="display:flex;align-items:center;gap:7px">${p?.paid||p?.prepaid?`<span class="badge ${p.prepaid?'b-prepaid':'b-paid'}">${p.prepaid?'Pre-paid':'Paid'}</span>`:`<button class="btn btn-accent" style="padding:5px 10px;font-size:11px" onclick="openPaySheet(${b.id})">Pay</button>`}<span style="font-size:14px;font-weight:700;font-family:var(--mono);min-width:58px;text-align:right">${fmtM(b.amount)}</span></div></div>`;}).join('')}</div></div>`).join(''):`<div class="empty" style="padding:24px"><div class="empty-ico">📋</div><div class="empty-t">No bills in this period</div></div>`}
+    ${Object.keys(groups).length?Object.entries(groups).map(([lbl,bs])=>`<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">${lbl}</div><div class="card">${bs.filter((b,i,a)=>a.findIndex(x=>x.id===b.id)===i).map(b=>{const p=paymentThisMonth(b);return`<div class="wr-row"><div style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer" onclick="openDetail(${b.id})">${renderIconWithUrl(b.icon,b.url,30)}<div><div style="font-size:13px;font-weight:600">${b.name}</div><div style="font-size:11px;color:var(--text2)">${b.freq} · ${fmtM(b.amount)}</div></div></div><div style="display:flex;align-items:center;gap:7px">${p?.paid||p?.prepaid?`<span class="badge ${p.prepaid?'b-prepaid':'b-paid'}">${p.prepaid?'Pre-paid · '+fmtDate(p.prepaidDate):'Paid'}</span>`:`<button class="btn btn-accent" style="padding:5px 10px;font-size:11px" onclick="openPaySheet(${b.id})">Pay</button>`}<span style="font-size:14px;font-weight:700;font-family:var(--mono);min-width:58px;text-align:right">${fmtM(b.amount)}</span></div></div>`;}).join('')}</div></div>`).join(''):`<div class="empty" style="padding:24px"><div class="empty-ico">📋</div><div class="empty-t">No bills in this period</div></div>`}
   `;
 }
 
@@ -2308,7 +2308,7 @@ function renderPlannerPaychecks(){
     </div>`;
     return;
   }
-  const currPrefix = plannerYear+'-'+String(plannerMonth+1).padStart(2,'0');
+  const currPrefix = plannerYear+'-'+String(plannerMonth+1).padStart(2,'00');
   const n=new Date(); const y=n.getFullYear(); const m=n.getMonth();
   container.innerHTML = extPaydays.map(item=>{
     const pd = item.date;
@@ -2319,7 +2319,6 @@ function renderPlannerPaychecks(){
     const remaining = salary - total;
     const overBudget = salary>0 && remaining<0;
     const dateLabel = new Date(pd+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    const monthTag = isOtherMonth ? `<span style="font-size:10px;color:var(--text3);font-weight:500;margin-left:5px">${item.label.includes('prev') ? '← prev' : 'next →'}</span>` : '';
     const billRows = assignedBills.map(b=>`
       <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
         ${renderIconWithUrl(b.icon,b.url,28)}
@@ -2329,10 +2328,10 @@ function renderPlannerPaychecks(){
         <div style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--danger)">-${fmtM(b.amount)}</div>
         <button onclick="assignBill(${b.id},null)" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 2px" title="Remove">×</button>
       </div>`).join('');
-    return`<div class="card" style="padding:12px${isOtherMonth?';opacity:0.75;border-style:dashed':''}">
+    return`<div class="card" style="padding:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div>
-          <div style="font-size:13px;font-weight:700;color:var(--accent)">💰 ${dateLabel}${monthTag}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--accent)">💰 ${dateLabel}</div>
           ${salary>0?`<div style="font-size:11px;color:var(--text2)">${fmtM(salary)} paycheck</div>`:''}
         </div>
         ${salary>0?`<div style="font-size:13px;font-weight:700;color:${overBudget?'var(--danger)':'var(--accent)'}">${overBudget?'Over by ':'Left: '}${fmtM(Math.abs(remaining))}</div>`:''}
