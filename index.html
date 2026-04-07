@@ -35,16 +35,16 @@
   --logo-sub:#8b98b0;
 }
 [data-theme="light"]{
-  --bg:#f5f0e8;--bg2:#fff9ef;--bg3:#ede6d6;--bg4:#e4dcc8;
-  --text:#2a1e0c;--text2:#6b5740;--text3:#9e856a;
-  --border:rgba(139,94,26,.12);--border2:rgba(139,94,26,.2);
-  --shadow:rgba(42,30,12,.1);
-  --topbar:rgba(245,240,232,.97);
-  --chip-bg:#ede6d6;--chip-text:#6b5740;
-  --input-bg:#f5f0e8;
-  --card-bg:#fff9ef;
-  --nav-bg:#ede6d6;
-  --logo-sub:#8b5e1a;
+  --bg:#f0f4f8;--bg2:#ffffff;--bg3:#f5f7fa;--bg4:#e8edf3;
+  --text:#1a202c;--text2:#64748b;--text3:#94a3b8;
+  --border:rgba(0,0,0,.08);--border2:rgba(0,0,0,.13);
+  --shadow:rgba(0,0,0,.1);
+  --topbar:rgba(255,255,255,.95);
+  --chip-bg:#e8edf3;--chip-text:#64748b;
+  --input-bg:#f5f7fa;
+  --card-bg:#ffffff;
+  --nav-bg:#ffffff;
+  --logo-sub:#64748b;
 }
 :root{
   --accent:#22d3a0;--accent2:#1aaa80;--accent-dim:rgba(34,211,160,.13);--accent-glow:rgba(34,211,160,.2);
@@ -453,7 +453,7 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
       <div id="planner-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center"></div>
       <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px">
         <div style="font-size:11px;color:var(--text2)">Tap date to mark payday 💰</div>
-        <div id="planner-cal-footer"></div>
+        ${cfg.payDate?`<button onclick="generatePaydays(plannerYear,plannerMonth)" style="font-size:10px;background:var(--accent-dim);color:var(--accent);border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-family:var(--font);font-weight:600">Auto-fill bi-weekly</button>`:'<span style="font-size:10px;color:var(--text3)">Set pay date in Settings first</span>'}
       </div>
     </div>
 
@@ -2074,12 +2074,10 @@ window.renderSettingsUI = function renderSettingsUI(){
   document.getElementById('s-default-notify').value=cfg.defaultNotify||'1 day before';
   document.getElementById('s-dark').checked=cfg.theme==='dark';
 }
-function openSalary(){document.getElementById('sal-input').value=cfg.salary||'';var pdEl=document.getElementById('sal-paydate-input');if(pdEl)pdEl.value=cfg.payDate||'';openSheet('salary-sheet');}
+function openSalary(){document.getElementById('sal-input').value=cfg.salary||'';openSheet('salary-sheet');}
 function saveSalary(){
   var val = parseFloat(document.getElementById('sal-input').value)||0;
-  var pd = document.getElementById('sal-paydate-input').value||'';
   window.cfg.salary = val;
-  if(pd) window.cfg.payDate = pd;
   cfg = window.cfg;
   localStorage.setItem('am-cfg',JSON.stringify(cfg));
   saveCfgToFirestore();
@@ -2267,14 +2265,6 @@ function renderPlannerCalendar(){
     ">${d}${isPayday?'<div style="font-size:8px;line-height:1">💰</div>':''}</div>`;
   }
   document.getElementById('planner-cal-grid').innerHTML = cells;
-  const footer = document.getElementById('planner-cal-footer');
-  if(footer){
-    if(cfg.payDate){
-      footer.innerHTML=`<button onclick="generatePaydays(plannerYear,plannerMonth)" style="font-size:10px;background:var(--accent-dim);color:var(--accent);border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-family:var(--font);font-weight:600">Auto-fill bi-weekly</button>`;
-    } else {
-      footer.innerHTML=`<span style="font-size:10px;color:var(--text3)">Set pay date in Settings first</span>`;
-    }
-  }
 }
 
 function getPlannerPaydays(){
@@ -2299,20 +2289,17 @@ function assignBill(billId, paycheckDate){
 
 function renderPlannerPaychecks(){
   bills = window.bills; // always sync
-  const extPaydays = getExtendedPaydays();
+  const paydays = getPlannerPaydays();
   const salary  = cfg.salary || 0;
   const container = document.getElementById('planner-paychecks');
-  if(!extPaydays.length){
+  if(!paydays.length){
     container.innerHTML=`<div style="grid-column:span 2;text-align:center;padding:20px;color:var(--text2);font-size:13px">
       Mark your paydays on the calendar above 💰
     </div>`;
     return;
   }
-  const currPrefix = plannerYear+'-'+String(plannerMonth+1).padStart(2,'00');
   const n=new Date(); const y=n.getFullYear(); const m=n.getMonth();
-  container.innerHTML = extPaydays.map(item=>{
-    const pd = item.date;
-    const isOtherMonth = !pd.startsWith(currPrefix);
+  container.innerHTML = paydays.map(pd=>{
     const assigned = (plannerData.assignments[pd]||[]);
     const assignedBills = assigned.map(id=>bills.find(b=>b.id==id)).filter(Boolean);
     const total = assignedBills.reduce((s,b)=>s+parseFloat(b.amount||0),0);
