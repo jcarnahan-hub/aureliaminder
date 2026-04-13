@@ -416,6 +416,7 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
     <button class="ins-tab" id="itab-weekly" onclick="switchInsTab('weekly',this)" style="flex:1;padding:7px;border-radius:var(--radius-sm);background:var(--bg3);color:var(--text2);border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Reports</button>
     <button class="ins-tab" id="itab-charts" onclick="switchInsTab('charts',this)" style="flex:1;padding:7px;border-radius:var(--radius-sm);background:var(--bg3);color:var(--text2);border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Charts</button>
     <button class="ins-tab" id="itab-debt" onclick="switchInsTab('debt',this)" style="flex:1;padding:7px;border-radius:var(--radius-sm);background:var(--bg3);color:var(--text2);border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Debt</button>
+    <button class="ins-tab" id="itab-subs" onclick="switchInsTab('subs',this)" style="flex:1;padding:7px;border-radius:var(--radius-sm);background:var(--bg3);color:var(--text2);border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📺 Subs</button>
   </div>
   <div class="inner" style="padding-top:14px">
     <div id="today-summary" class="card" style="margin:0 0 12px;display:none"></div>
@@ -423,6 +424,7 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
     <div id="ins-weekly" style="display:none"></div>
     <div id="ins-charts" style="display:none"></div>
     <div id="ins-debt" style="display:none"></div>
+    <div id="ins-subs" style="display:none"></div>
   </div>
 </div>
 
@@ -1755,10 +1757,11 @@ function switchInsTab(tab,btn){
   insTab=tab;
   document.querySelectorAll('.ins-tab').forEach(b=>{b.style.background='var(--bg3)';b.style.color='var(--text2)';b.style.fontWeight='600';});
   btn.style.background='var(--accent)'; btn.style.color='#0d1117'; btn.style.fontWeight='700';
-  ['overview','weekly','charts'].forEach(t=>document.getElementById('ins-'+t).style.display=t===tab?'block':'none');
+  ['overview','weekly','charts','debt','subs'].forEach(t=>document.getElementById('ins-'+t).style.display=t===tab?'block':'none');
   if(tab==='charts') renderCharts();
   if(tab==='weekly') renderWeeklyReport();
   if(tab==='debt') renderDebtReport();
+  if(tab==='subs') renderSubsReport();
 }
 
 function renderInsights(){
@@ -1769,6 +1772,7 @@ function renderInsights(){
   if(insTab==='weekly') renderWeeklyReport();
   if(insTab==='charts') renderCharts();
   if(insTab==='debt') renderDebtReport();
+  if(insTab==='subs') renderSubsReport();
 }
 
 function renderOverview(y,m,now){
@@ -1985,6 +1989,87 @@ function renderDebtReport(){
       <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:700">
         <span style="color:var(--text2)">Tap Edit on each bill to categorize</span>
         <span style="font-family:var(--mono);color:var(--warn)">${fmtM(uncatBills.reduce((s,b)=>s+b.amount,0))}/mo</span>
+      </div>
+    </div>`:''}
+  `;
+}
+
+// ── Subscriptions ──
+function renderSubsReport(){
+  cfg=window.cfg; bills=window.bills;
+  const now=new Date(); const y=now.getFullYear(), m=now.getMonth();
+  const subBills = bills.filter(b=>b.category==='subscription'&&!isClosed(b));
+  const digitalBills = bills.filter(b=>b.category==='digital'&&!isClosed(b));
+  const allSubs = [...subBills, ...digitalBills].sort((a,b_)=>b_.amount-a.amount);
+  const totalMo = allSubs.reduce((s,b)=>s+b.amount,0);
+  const totalYr = totalMo*12;
+
+  function subRow(b){
+    const p=paymentThisMonth(b);
+    const paid=p&&(p.paid||p.prepaid);
+    const overdue=isOverdue(b);
+    const statusBadge = p?.prepaid
+      ? `<span style="font-size:10px;font-weight:700;color:var(--info)">Pre-paid ✓</span>`
+      : paid
+        ? `<span style="font-size:10px;font-weight:700;color:var(--accent)">✓ Paid</span>`
+        : overdue
+          ? `<span style="font-size:10px;font-weight:700;color:var(--danger)">Overdue</span>`
+          : `<span style="font-size:10px;color:var(--text3)">Unpaid</span>`;
+    const dueStr = dueDateFor(b,y,m);
+    return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openDetail(${b.id})">
+      ${renderIconWithUrl(b.icon,b.url,36)}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600">${b.name}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:1px">${b.freq} · Due ${fmtDate(dueStr)}</div>
+        <div style="margin-top:3px">${statusBadge}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtM(b.amount)}<span style="font-size:10px;color:var(--text2)">/mo</span></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${fmtM(b.amount*12)}/yr</div>
+      </div>
+    </div>`;
+  }
+
+  const subsHtml = subBills.length ? subBills.sort((a,b_)=>b_.amount-a.amount).map(subRow).join('') : '<div style="font-size:12px;color:var(--text2);text-align:center;padding:12px">No bills with category "Subscription" yet.</div>';
+  const digitalHtml = digitalBills.length ? digitalBills.sort((a,b_)=>b_.amount-a.amount).map(subRow).join('') : '<div style="font-size:12px;color:var(--text2);text-align:center;padding:12px">No bills with category "Digital Services" yet.</div>';
+
+  const paidCount = allSubs.filter(b=>{const p=paymentThisMonth(b);return p&&(p.paid||p.prepaid);}).length;
+  const unpaidCount = allSubs.length - paidCount;
+
+  document.getElementById('ins-subs').innerHTML=`
+    <!-- Summary cards -->
+    <div class="ins-grid" style="margin-bottom:14px">
+      <div class="ic"><div class="ic-lbl">Total Subs</div><div class="ic-val">${allSubs.length}</div><div class="ic-sub">active subscriptions</div></div>
+      <div class="ic"><div class="ic-lbl">Monthly Cost</div><div class="ic-val" style="color:var(--danger)">${fmtM(totalMo)}</div><div class="ic-sub">${fmtM(totalYr)}/yr</div></div>
+      <div class="ic"><div class="ic-lbl">Paid This Month</div><div class="ic-val" style="color:var(--accent)">${paidCount}</div><div class="ic-sub">of ${allSubs.length}</div></div>
+      <div class="ic"><div class="ic-lbl">Still Owed</div><div class="ic-val" style="color:${unpaidCount>0?'var(--warn)':'var(--accent)'}">${unpaidCount}</div><div class="ic-sub">unpaid this month</div></div>
+    </div>
+
+    <!-- Usage reminder banner -->
+    <div style="background:rgba(34,211,160,.08);border:1px solid rgba(34,211,160,.2);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">
+      <div style="font-size:20px">💡</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5"><strong style="color:var(--text)">Subscription audit tip:</strong> Review each service below. If you haven't used it this month, consider pausing or canceling. Tap any row to view details.</div>
+    </div>
+
+    ${subBills.length||digitalBills.length?'':'<div class="card" style="text-align:center;padding:24px;color:var(--text2)"><div style="font-size:32px;margin-bottom:8px">📺</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">No subscriptions tracked yet</div><div style="font-size:12px">Add bills with category <strong>Subscription</strong> or <strong>Digital Services</strong> to track them here.</div></div>'}
+
+    ${subBills.length?`
+    <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">📺 Subscriptions (${subBills.length}) · ${fmtM(subBills.reduce((s,b)=>s+b.amount,0))}/mo</div>
+    <div class="card" style="margin-bottom:14px">${subsHtml}</div>`:''}
+
+    ${digitalBills.length?`
+    <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">📱 Digital Services (${digitalBills.length}) · ${fmtM(digitalBills.reduce((s,b)=>s+b.amount,0))}/mo</div>
+    <div class="card" style="margin-bottom:14px">${digitalHtml}</div>`:''}
+
+    ${allSubs.length?`
+    <div class="card" style="margin-bottom:14px;background:var(--bg3)">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">
+        <span style="font-size:13px;font-weight:700">Total subscription spend</span>
+        <span style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--danger)">${fmtM(totalMo)}/mo</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">
+        <span style="font-size:12px;color:var(--text2)">Annualized</span>
+        <span style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--text2)">${fmtM(totalYr)}/yr</span>
       </div>
     </div>`:''}
   `;
