@@ -373,7 +373,10 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
   <div class="topbar">
     <div><div class="logo"><span class="logo-aurelia">Aurelia</span><span class="logo-minder">Minder</span></div><div class="topbar-sub">Bill calendar</div>
       <div class="tagline">Simply Structured, Beautifully Planned... Where organization meets inspiration!</div></div>
-    <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+    <div class="topbar-actions">
+      <div id="user-avatar-calendar" style="flex-shrink:0"></div>
+      <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+    </div>
   </div>
   <div class="inner" style="padding-top:14px">
     <div class="card">
@@ -402,6 +405,7 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
     <div><div class="logo"><span class="logo-aurelia">Aurelia</span><span class="logo-minder">Minder</span></div><div class="topbar-sub" id="ins-month-lbl"></div>
       <div class="tagline">Simply Structured, Beautifully Planned... Where organization meets inspiration!</div></div>
     <div class="topbar-actions">
+      <div id="user-avatar-insights" style="flex-shrink:0"></div>
       <button class="theme-btn" onclick="toggleTheme()">🌙</button>
       <button class="btn btn-ghost" style="padding:7px 12px;font-size:12px" onclick="openSalary()">⚙ Pay</button>
     </div>
@@ -2875,7 +2879,7 @@ window.addEventListener('load', () => {
 
     if(user){
       // Update avatar on all pages
-      ['user-avatar','user-avatar-planner'].forEach(function(avatarId){
+      ['user-avatar','user-avatar-planner','user-avatar-calendar','user-avatar-insights'].forEach(function(avatarId){
         const el = document.getElementById(avatarId);
         if(el){
           if(user.photoURL){
