@@ -2852,8 +2852,15 @@ window.addEventListener('load', () => {
   // Sign in / out
   window.signInWithGoogle = function(){
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithRedirect(provider)
-      .catch(e=>{ console.error('Sign in error:',e); alert('Sign in failed: '+e.message); });
+    auth.signInWithPopup(provider)
+      .catch(function(e){
+        // If popup was blocked or closed, fall back to redirect
+        if(e.code==='auth/popup-blocked'||e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request'){
+          auth.signInWithRedirect(provider).catch(function(e2){ console.error('Redirect error:',e2); alert('Sign in failed: '+e2.message); });
+        } else {
+          console.error('Sign in error:',e); alert('Sign in failed: '+e.message);
+        }
+      });
   };
 
   // Handle redirect result on page load (only in valid browser contexts)
@@ -2862,7 +2869,12 @@ window.addEventListener('load', () => {
       .then(function(result){
         if(result && result.user){ console.log('✅ Redirect sign-in complete:', result.user.email); }
       })
-      .catch(function(e){ console.error('Redirect result error:',e); alert('Sign in failed: '+e.message); });
+      .catch(function(e){
+        // Ignore unsupported environment errors (e.g. service worker context)
+        if(e.code!=='auth/operation-not-supported-in-this-environment'){
+          console.error('Redirect result error:',e);
+        }
+      });
   }
 
   window.signOutUser = function(){
