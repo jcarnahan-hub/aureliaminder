@@ -2848,9 +2848,18 @@ window.addEventListener('load', () => {
   // Sign in / out
   window.signInWithGoogle = function(){
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider)
+    auth.signInWithRedirect(provider)
       .catch(e=>{ console.error('Sign in error:',e); alert('Sign in failed: '+e.message); });
   };
+
+  // Handle redirect result on page load (only in valid browser contexts)
+  if(['http:','https:'].includes(location.protocol)){
+    auth.getRedirectResult()
+      .then(function(result){
+        if(result && result.user){ console.log('✅ Redirect sign-in complete:', result.user.email); }
+      })
+      .catch(function(e){ console.error('Redirect result error:',e); alert('Sign in failed: '+e.message); });
+  }
 
   window.signOutUser = function(){
     if(!confirm('Sign out of AureliaMinder?')) return;
