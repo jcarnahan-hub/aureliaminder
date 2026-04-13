@@ -2100,6 +2100,8 @@ function savePayDate(){
   document.getElementById('paydate-sheet').classList.remove('open');
   window.renderSettingsUI();
   renderInsights();
+  // Auto-fill paydays for current planner month now that pay date is set
+  if(val) generatePaydays(plannerYear, plannerMonth);
 }
 
 // ══════════════════════════════════════════
@@ -2234,8 +2236,16 @@ function getBillDueDates(bill, startDate, endDate){
   return dates;
 }
 
-function plannerCalPrev(){ plannerMonth--; if(plannerMonth<0){plannerMonth=11;plannerYear--;} renderPlannerCalendar(); }
-function plannerCalNext(){ plannerMonth++; if(plannerMonth>11){plannerMonth=0;plannerYear++;} renderPlannerCalendar(); }
+function plannerCalPrev(){ plannerMonth--; if(plannerMonth<0){plannerMonth=11;plannerYear--;} autoFillPaydaysIfNeeded(); renderPlannerCalendar(); renderPlannerPaychecks(); renderPlannerUnassigned(); }
+function plannerCalNext(){ plannerMonth++; if(plannerMonth>11){plannerMonth=0;plannerYear++;} autoFillPaydaysIfNeeded(); renderPlannerCalendar(); renderPlannerPaychecks(); renderPlannerUnassigned(); }
+
+// Auto-fill paydays for current plannerYear/plannerMonth if none exist yet and cfg.payDate is set
+function autoFillPaydaysIfNeeded(){
+  if(!cfg.payDate) return;
+  const prefix = plannerYear+'-'+String(plannerMonth+1).padStart(2,'0');
+  const existing = (plannerData.paydays||[]).filter(d=>d.startsWith(prefix));
+  if(existing.length===0) generatePaydays(plannerYear, plannerMonth);
+}
 
 function togglePayday(dateStr){
   const idx = plannerData.paydays.indexOf(dateStr);
@@ -2419,6 +2429,7 @@ function renderPlannerUnassigned(){
 
 function renderPlanner(){
   bills = window.bills; // sync before rendering
+  autoFillPaydaysIfNeeded();
   renderPlannerCalendar();
   renderPlannerPaychecks();
   renderPlannerUnassigned();
