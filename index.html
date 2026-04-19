@@ -993,7 +993,7 @@ window.applyTheme = function applyTheme(t){
   cfg.theme=t;
   const isDark=t==='dark';
   document.getElementById('theme-btn').textContent=isDark?'🌙':'☀️';
-  document.querySelectorAll('.theme-btn').forEach(b=>b.textContent=isDark?'🌙':'☀️');
+  document.querySelectorAll('.theme-btn[onclick*="toggleTheme"]').forEach(b=>b.textContent=isDark?'🌙':'☀️');
   const sd=document.getElementById('s-dark');
   if(sd) sd.checked=isDark;
   localStorage.setItem('am-cfg',JSON.stringify(cfg));
@@ -1080,10 +1080,6 @@ function isActiveIn(bill,y,m){
                       'Every 5 weeks','Every 6 weeks','Every 30 days','Monthly','One-time'];
   if(everyMonth.includes(freq)) return true;
 
-  // For multi-month frequencies, check if this month is a due month
-  // anchored to the bill's startDate month
-  if(!ps) return true; // no start date — show every month as fallback
-
   let intervalMonths = 0;
   if(freq === 'Every 2 months')  intervalMonths = 2;
   if(freq === 'Every 3 months')  intervalMonths = 3;
@@ -1092,9 +1088,35 @@ function isActiveIn(bill,y,m){
 
   if(intervalMonths === 0) return true; // unknown freq — show every month
 
-  // Calculate how many months from the start month to the target month
+  // Anchor: use the bill's dueDayOfMonth to find the true first due date.
+  // Walk backwards from startDate in intervalMonth steps to find the earliest
+  // occurrence — this handles cases where startDate was entered later than
+  // the bill's actual first due month.
+  if(!ps) return true; // no start date — show every month as fallback
+
+  // Find anchor month: the earliest month <= startDate that aligns with the cycle.
+  // We do this by taking startDate month and finding m % intervalMonths anchor.
+  // Use startDate month as the reference point for the modulo cycle.
   const startYr = ps.getFullYear(), startMo = ps.getMonth();
-  const monthsDiff = (y - startYr) * 12 + (m - startMo);
+
+  // The anchor is whichever month <= startDate that starts the cycle.
+  // Any month M is a due month if (M - startMo) % intervalMonths === 0
+  // BUT we also check: does any known payment exist? If so use that as anchor.
+  // Check payments to find the earliest paid/recorded month as a better anchor.
+  const payments = bill.payments || {};
+  let anchorYr = startYr, anchorMo = startMo;
+  if(Object.keys(payments).length > 0){
+    // Find the earliest payment period key (format: YYYY-MM)
+    const keys = Object.keys(payments).sort();
+    const earliest = keys[0];
+    const parts = earliest.split('-');
+    if(parts.length >= 2){
+      anchorYr = parseInt(parts[0]);
+      anchorMo = parseInt(parts[1]) - 1; // 0-indexed
+    }
+  }
+
+  const monthsDiff = (y - anchorYr) * 12 + (m - anchorMo);
   if(monthsDiff < 0) return false;
   return monthsDiff % intervalMonths === 0;
 }
