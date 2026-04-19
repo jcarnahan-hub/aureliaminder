@@ -1086,34 +1086,40 @@ function isActiveIn(bill,y,m){
   if(freq === 'Every 6 months')  intervalMonths = 6;
   if(freq === 'Annually')        intervalMonths = 12;
 
-  if(intervalMonths === 0) return true; // unknown freq — show every month
-
-  // Anchor: use the bill's dueDayOfMonth to find the true first due date.
-  // Walk backwards from startDate in intervalMonth steps to find the earliest
-  // occurrence — this handles cases where startDate was entered later than
-  // the bill's actual first due month.
+  if(intervalMonths === 0) return true;
   if(!ps) return true; // no start date — show every month as fallback
 
-  // Find anchor month: the earliest month <= startDate that aligns with the cycle.
-  // We do this by taking startDate month and finding m % intervalMonths anchor.
-  // Use startDate month as the reference point for the modulo cycle.
-  const startYr = ps.getFullYear(), startMo = ps.getMonth();
+  // Find the best anchor month using this priority:
+  // 1. Earliest recorded payment (most reliable — reflects actual due history)
+  // 2. startDate walked BACKWARDS to find the true cycle origin
+  //    e.g. if quarterly bill has startDate=April, walk back to find
+  //    that Jan/Apr/Jul/Oct OR Feb/May/Aug/Nov OR Mar/Jun/Sep/Dec
+  //    — we pick the one that makes startDate land ON a cycle month,
+  //    then walk back to the earliest occurrence.
 
-  // The anchor is whichever month <= startDate that starts the cycle.
-  // Any month M is a due month if (M - startMo) % intervalMonths === 0
-  // BUT we also check: does any known payment exist? If so use that as anchor.
-  // Check payments to find the earliest paid/recorded month as a better anchor.
   const payments = bill.payments || {};
-  let anchorYr = startYr, anchorMo = startMo;
-  if(Object.keys(payments).length > 0){
-    // Find the earliest payment period key (format: YYYY-MM)
-    const keys = Object.keys(payments).sort();
-    const earliest = keys[0];
-    const parts = earliest.split('-');
-    if(parts.length >= 2){
-      anchorYr = parseInt(parts[0]);
-      anchorMo = parseInt(parts[1]) - 1; // 0-indexed
+  const payKeys = Object.keys(payments).sort();
+
+  let anchorYr, anchorMo;
+
+  if(payKeys.length > 0){
+    // Use earliest payment as anchor
+    const parts = payKeys[0].split('-');
+    anchorYr = parseInt(parts[0]);
+    anchorMo = parseInt(parts[1]) - 1;
+  } else {
+    // Walk startDate backwards by intervalMonths until we can't go further
+    // without going before year 2000 — this finds the true cycle origin
+    let aYr = ps.getFullYear(), aMo = ps.getMonth();
+    // Walk back as far as possible while still >= a reasonable floor
+    while(aYr > 2000 || (aYr === 2000 && aMo > 0)){
+      const prevMo = aMo - intervalMonths;
+      const newYr  = aYr + Math.floor(prevMo / 12);
+      const newMo  = ((prevMo % 12) + 12) % 12;
+      if(newYr < 2000) break;
+      aYr = newYr; aMo = newMo;
     }
+    anchorYr = aYr; anchorMo = aMo;
   }
 
   const monthsDiff = (y - anchorYr) * 12 + (m - anchorMo);
@@ -2547,9 +2553,24 @@ function plannerCalNext(){ plannerMonth++; if(plannerMonth>11){plannerMonth=0;pl
 // Auto-fill paydays for current plannerYear/plannerMonth if none exist yet and cfg.payDate is set
 function autoFillPaydaysIfNeeded(){
   if(!cfg.payDate) return;
+  // Always fill current month
   const prefix = plannerYear+'-'+String(plannerMonth+1).padStart(2,'0');
   const existing = (plannerData.paydays||[]).filter(d=>d.startsWith(prefix));
   if(existing.length===0) generatePaydays(plannerYear, plannerMonth);
+
+  // Also fill prev month so the "last paycheck of prev month" card shows
+  const prevY = plannerMonth===0 ? plannerYear-1 : plannerYear;
+  const prevM = plannerMonth===0 ? 11 : plannerMonth-1;
+  const prevPrefix = prevY+'-'+String(prevM+1).padStart(2,'0');
+  const prevExisting = (plannerData.paydays||[]).filter(d=>d.startsWith(prevPrefix));
+  if(prevExisting.length===0) generatePaydays(prevY, prevM);
+
+  // Also fill next month so the "first paycheck of next month" card shows
+  const nextY = plannerMonth===11 ? plannerYear+1 : plannerYear;
+  const nextM = plannerMonth===11 ? 0 : plannerMonth+1;
+  const nextPrefix = nextY+'-'+String(nextM+1).padStart(2,'0');
+  const nextExisting = (plannerData.paydays||[]).filter(d=>d.startsWith(nextPrefix));
+  if(nextExisting.length===0) generatePaydays(nextY, nextM);
 }
 
 function togglePayday(dateStr){
