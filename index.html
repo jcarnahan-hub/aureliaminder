@@ -1143,8 +1143,8 @@ function isActiveIn(bill,y,m){
 function isClosed(bill){ if(!bill.endDate)return false; return new Date(bill.endDate+'T12:00')<today(); }
 function dueDateFor(bill,y,m){ const day=parseInt(bill.dueDayOfMonth)||1; const max=new Date(y,m+1,0).getDate(); return`${y}-${String(m+1).padStart(2,'0')}-${String(Math.min(day,max)).padStart(2,'0')}`; }
 function paymentThisMonth(bill){ return(bill.payments||{})[currentPeriod()]||null; }
-function isOverdue(bill){ if(isClosed(bill))return false; const p=paymentThisMonth(bill); if(p&&(p.paid||p.prepaid))return false; const n=new Date(); return new Date(dueDateFor(bill,n.getFullYear(),n.getMonth())+'T12:00')<today(); }
-function daysUntilDue(bill){ const n=new Date(); return Math.ceil((new Date(dueDateFor(bill,n.getFullYear(),n.getMonth())+'T12:00')-today())/864e5); }
+function isOverdue(bill){ if(isClosed(bill))return false; const n=new Date(); if(!isActiveIn(bill,n.getFullYear(),n.getMonth()))return false; const p=paymentThisMonth(bill); if(p&&(p.paid||p.prepaid))return false; return new Date(dueDateFor(bill,n.getFullYear(),n.getMonth())+'T12:00')<today(); }
+function daysUntilDue(bill){ const n=new Date(); if(!isActiveIn(bill,n.getFullYear(),n.getMonth()))return 999; return Math.ceil((new Date(dueDateFor(bill,n.getFullYear(),n.getMonth())+'T12:00')-today())/864e5); }
 
 // ══════════════════════════════════════════
 //  PAYMENT COUNTDOWN
@@ -1832,7 +1832,16 @@ function renderBillList(){
     const onclickAttr = sortMode!=='drag' ? 'onclick="openDetail('+b.id+')"' : '';
     const cdBadge = b.endDate ? renderCountdownBadge(b, true) : '';
     const isComplete = b.endDate && getPaymentCountdown(b)?.isComplete;
-    const dueDisplay=!isClosed(b)&&!p?.paid&&!p?.prepaid?'Due '+fmtDate(dueStr):'Due '+fmtDate(dueStr);
+    const n3=new Date();
+    let dueDisplay;
+    if(isClosed(b)){ dueDisplay='Closed'; }
+    else if(!isActiveIn(b,n3.getFullYear(),n3.getMonth())){
+      // Not due this month — find next due month
+      let nextLabel='';
+      for(let i=1;i<=12;i++){ const nm=(n3.getMonth()+i)%12; const ny=n3.getFullYear()+Math.floor((n3.getMonth()+i)/12); if(isActiveIn(b,ny,nm)){ nextLabel='Next due '+new Date(ny,nm,1).toLocaleString('default',{month:'short'})+' '+ny; break; } }
+      dueDisplay = nextLabel || 'Not due this month';
+    }
+    else{ dueDisplay='Due '+fmtDate(dueStr); }
     const ccZeroStr=b.category==='creditcard'&&(b.ccBalance===0||b.ccBalance==='0')?getCCBadge(b,true):'';
     const pmBadge2=b.payMethod?`<span style="font-size:9px;background:var(--bg4);color:var(--text2);border-radius:4px;padding:1px 5px;margin-left:4px">${fmtPayMethod(b.payMethod)}</span>`:'';
     // Right side: amount + status badge on same line, clean layout matching Insights
