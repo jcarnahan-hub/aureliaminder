@@ -343,11 +343,11 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
     <div id="notif-banners"></div>
     <div class="sh"><h2>Filter</h2></div>
     <div class="chips">
-      <button class="chip active" onclick="setFilter('active',this)">Active</button>
+      <button class="chip active" onclick="setFilter('active',this)">Due This Month</button>
       <button class="chip" onclick="setFilter('overdue',this)">Overdue</button>
       <button class="chip" onclick="setFilter('paid',this)">Paid this month</button>
+      <button class="chip" onclick="setFilter('allactive',this)">All Bills</button>
       <button class="chip" onclick="setFilter('closed',this)">Closed</button>
-      <button class="chip" onclick="setFilter('all',this)">All</button>
     </div>
     <div class="search-bar">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -1780,10 +1780,11 @@ function renderBillList(){
   const activeBills=bills.filter(b=>isActiveIn(b,n.getFullYear(),n.getMonth()));
   const closedBills=bills.filter(b=>isClosed(b));
   let list;
-  if(filter==='active')  list=bills.filter(b=>!isClosed(b));
-  else if(filter==='overdue') list=bills.filter(b=>!isClosed(b)&&isOverdue(b));
-  else if(filter==='paid')    list=bills.filter(b=>{const p=paymentThisMonth(b);return p&&(p.paid||p.prepaid);});
-  else if(filter==='closed')  list=closedBills;
+  if(filter==='active')      list=bills.filter(b=>!isClosed(b)&&isActiveIn(b,n.getFullYear(),n.getMonth()));
+  else if(filter==='allactive') list=bills.filter(b=>!isClosed(b));
+  else if(filter==='overdue')   list=bills.filter(b=>!isClosed(b)&&isOverdue(b));
+  else if(filter==='paid')      list=bills.filter(b=>{const p=paymentThisMonth(b);return p&&(p.paid||p.prepaid);});
+  else if(filter==='closed')    list=closedBills;
   else list=bills;
   if(searchQ) list=list.filter(b=>b.name.toLowerCase().includes(searchQ)||(b.notes||'').toLowerCase().includes(searchQ)||(b.category||'').toLowerCase().includes(searchQ));
   document.getElementById('bill-ct').textContent=`${list.length} shown`;
