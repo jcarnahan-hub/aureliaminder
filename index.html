@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-title" content="AureliaMinder">
 <meta name="description" content="AureliaMinder – Simply Structured, Beautifully Planned. Where organization meets inspiration.">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon.png">
-<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -1590,7 +1590,17 @@ function openDetail(id){
   else if(p?.prepaid) sb=`<span class="badge b-prepaid">Pre-paid · ${fmtDate(p.prepaidDate)}</span>`;
   else if(p?.paid) sb=`<span class="badge b-paid">Paid · ${fmtDate(p.paidDate)}</span>`;
   else if(overdue) sb=`<span class="badge b-overdue">Overdue</span>`;
-  else sb=`<span class="badge b-upcoming">Due ${fmtDate(dueStr)}</span>`;
+  else {
+    const nNow=new Date();
+    if(!isActiveIn(b,nNow.getFullYear(),nNow.getMonth())){
+      // Find next due month
+      let nextLbl='';
+      for(let i=1;i<=13;i++){ let nm=nNow.getMonth()+i; let ny=nNow.getFullYear(); while(nm>11){nm-=12;ny++;} if(isActiveIn(b,ny,nm)){nextLbl='Next due '+new Date(ny,nm,1).toLocaleString('default',{month:'short'})+' '+ny;break;} }
+      sb=`<span class="badge b-upcoming">${nextLbl||'Not due this month'}</span>`;
+    } else {
+      sb=`<span class="badge b-upcoming">Due ${fmtDate(dueStr)}</span>`;
+    }
+  }
   const hist=Object.entries(b.payments||{}).sort((a,z)=>z[0].localeCompare(a[0])).slice(0,24);
   const histHtml=hist.length?`<div class="stitle" style="margin-top:16px">Payment history</div>${hist.map(([k,v])=>`<div class="hist-row">
     <span style="font-size:13px;color:var(--text2)">${k}</span>
