@@ -6,13 +6,14 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AureliaMinder">
 <meta name="description" content="AureliaMinder – Simply Structured, Beautifully Planned. Where organization meets inspiration.">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" sizes="512x512" href="icon.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon.png">
+<link rel="manifest" href="manifest.json?v=2">
+<link rel="apple-touch-icon" sizes="512x512" href="icon.png?v=2">
+<link rel="icon" type="image/png" sizes="512x512" href="icon.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -300,7 +301,7 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
 
 <!-- ══ LOGIN SCREEN ══ -->
 <div id="login-screen" style="position:fixed;inset:0;z-index:9998;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:0">
-  <img src="icon.png" style="width:120px;height:120px;border-radius:28px;box-shadow:0 0 40px rgba(34,211,160,.25);margin-bottom:24px" alt="AureliaMinder">
+  <img src="icon.png?v=2" style="width:120px;height:120px;border-radius:28px;box-shadow:0 0 40px rgba(34,211,160,.25);margin-bottom:24px" alt="AureliaMinder">
   <div style="font-family:'Sora',sans-serif;font-size:26px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px"><span style="color:var(--text)">Aurelia</span><span style="color:var(--accent)">Minder</span></div>
   <div style="font-family:'Sora',sans-serif;font-size:13px;color:var(--text2);font-style:italic;text-align:center;margin-bottom:32px;line-height:1.6">Simply Structured, Beautifully Planned.<br><span style="font-size:11px;opacity:.7">Where organization meets inspiration.</span></div>
   <button onclick="signInWithGoogle()" style="display:flex;align-items:center;gap:12px;padding:14px 24px;background:#fff;color:#1a202c;border:none;border-radius:12px;font-family:'Sora',sans-serif;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.15);transition:transform .15s;width:100%;max-width:280px;justify-content:center" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
@@ -312,7 +313,7 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
 
 <!-- ══ SPLASH SCREEN ══ -->
 <div id="splash" style="position:fixed;inset:0;z-index:9999;background:#0d1117;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transition:opacity .6s ease">
-  <img src="icon.png" style="width:160px;height:160px;border-radius:32px;box-shadow:0 0 60px rgba(34,211,160,.3);animation:splashPop .6s ease;margin-bottom:20px" alt="AureliaMinder">
+  <img src="icon.png?v=2" style="width:160px;height:160px;border-radius:32px;box-shadow:0 0 60px rgba(34,211,160,.3);animation:splashPop .6s ease;margin-bottom:20px" alt="AureliaMinder">
   <div style="font-family:'Sora',sans-serif;font-size:26px;font-weight:700;letter-spacing:-.5px;color:#e8f0fe;margin-bottom:6px"><span style="color:#e8f0fe">Aurelia</span><span style="color:#22d3a0">Minder</span></div>
   <div style="font-family:'Sora',sans-serif;font-size:13px;color:#8b98b0;font-style:italic;text-align:center;padding:0 30px;line-height:1.6">Simply Structured, Beautifully Planned.<br><span style="font-size:11px;opacity:.7">Where organization meets inspiration.</span></div>
   <div style="margin-top:28px;width:36px;height:3px;background:rgba(34,211,160,.3);border-radius:2px;overflow:hidden;position:relative"><div style="position:absolute;left:-100%;top:0;width:100%;height:100%;background:var(--accent,#22d3a0);animation:splashBar 1.4s ease infinite"></div></div>
