@@ -1115,8 +1115,10 @@ function isActiveIn(bill,y,m){
     const anchorMo = bill.firstDueMonth; // 0=Jan, 11=Dec
     const anchorYr = ps ? ps.getFullYear() : y;
     // Find the first year this anchor month occurs at or after startDate
+    // Compare at month level only (not day) to avoid bumping year when
+    // startDate day > 1 within the same anchor month
     let firstYr = anchorYr;
-    if(ps && new Date(firstYr, anchorMo, 1) < ps) firstYr++;
+    if(ps && (anchorYr < ps.getFullYear() || (anchorYr === ps.getFullYear() && anchorMo < ps.getMonth()))) firstYr = ps.getFullYear() + (anchorMo < ps.getMonth() ? 1 : 0);
     const monthsDiff = (y - firstYr) * 12 + (m - anchorMo);
     if(monthsDiff < 0) return false;
     return monthsDiff % intervalMonths === 0;
