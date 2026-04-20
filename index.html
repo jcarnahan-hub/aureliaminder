@@ -646,10 +646,10 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
         <div class="fg"><label>Start date *</label><input type="date" id="f-start"><div class="hint">When this bill begins</div></div>
         <div class="fg"><label>End date</label><input type="date" id="f-end"><div class="hint">Leave blank if ongoing</div></div>
       </div>
-      <div class="fg" id="f-firstmonth-wrap" style="display:none">
-        <label>First due month <span style="color:var(--accent)">*</span></label>
-        <select id="f-firstmonth" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-xs);padding:10px 12px;font-size:13px;color:var(--text);font-family:var(--font);outline:none;width:100%">
-          <option value="">-- Which month is it first due? --</option>
+      <div class="fg" id="f-firstmonth-wrap" style="display:none;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:12px">
+        <label style="color:var(--warn);font-weight:700">⚡ First due month — required for correct scheduling</label>
+        <select id="f-firstmonth" style="background:var(--bg3);border:1px solid var(--warn);border-radius:var(--radius-xs);padding:10px 12px;font-size:13px;color:var(--text);font-family:var(--font);outline:none;width:100%;margin-top:6px">
+          <option value="">-- Pick the month this bill is first due --</option>
           <option value="0">January</option><option value="1">February</option>
           <option value="2">March</option><option value="3">April</option>
           <option value="4">May</option><option value="5">June</option>
@@ -657,7 +657,7 @@ nav{height:var(--nav-h);padding-bottom:var(--safe-b);background:var(--nav-bg);bo
           <option value="8">September</option><option value="9">October</option>
           <option value="10">November</option><option value="11">December</option>
         </select>
-        <div class="hint">The month this bill is first due — sets the recurring cycle</div>
+        <div class="hint" style="color:var(--warn);margin-top:6px">This controls which months the bill appears. e.g. for Mar/Jun/Sep/Dec → pick <strong>March</strong></div>
       </div>
       <div class="frow">
         <div class="fg"><label>Due day of month</label><input type="number" id="f-dueday" placeholder="e.g. 15" min="1" max="31"><div class="hint">Day due each period</div></div>
