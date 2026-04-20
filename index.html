@@ -1838,7 +1838,7 @@ function renderBillList(){
     else if(!isActiveIn(b,n3.getFullYear(),n3.getMonth())){
       // Not due this month — find next due month
       let nextLabel='';
-      for(let i=1;i<=12;i++){ const nm=(n3.getMonth()+i)%12; const ny=n3.getFullYear()+Math.floor((n3.getMonth()+i)/12); if(isActiveIn(b,ny,nm)){ nextLabel='Next due '+new Date(ny,nm,1).toLocaleString('default',{month:'short'})+' '+ny; break; } }
+      for(let i=1;i<=13;i++){ let nm=n3.getMonth()+i; let ny=n3.getFullYear(); while(nm>11){nm-=12;ny++;} if(isActiveIn(b,ny,nm)){ nextLabel='Next due '+new Date(ny,nm,1).toLocaleString('default',{month:'short'})+' '+ny; break; } }
       dueDisplay = nextLabel || 'Not due this month';
     }
     else{ dueDisplay='Due '+fmtDate(dueStr); }
