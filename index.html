@@ -2795,14 +2795,16 @@ function getExtendedPaydays(){
 function renderPlannerUnassigned(){
   const n=new Date(); const y=n.getFullYear(); const m=n.getMonth();
   bills = window.bills; // always sync
-  const allAssigned = Object.values(plannerData.assignments||{}).flat();
+  // Only count bills as "assigned" if they're on a visible paycheck in this planner view
+  const visiblePaydays = getExtendedPaydays().map(p=>p.date);
+  const allAssigned = visiblePaydays.flatMap(pd=>(plannerData.assignments||{})[pd]||[]);
   const includeNext = document.getElementById('planner-next-month')?.checked || false;
-  // Get next month dates
-  const nextY = m===11 ? y+1 : y;
-  const nextM = m===11 ? 0 : m+1;
+  // Use plannerYear/plannerMonth (not today) so it works when viewing other months
+  const nextY = plannerMonth===11 ? plannerYear+1 : plannerYear;
+  const nextM = plannerMonth===11 ? 0 : plannerMonth+1;
   const activeBills = (bills||[]).filter(b=>{
     if(isClosed(b)) return false;
-    if(isActiveIn(b,y,m)) return true;
+    if(isActiveIn(b,plannerYear,plannerMonth)) return true;
     if(includeNext && isActiveIn(b,nextY,nextM)) return true;
     return false;
   });
