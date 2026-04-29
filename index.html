@@ -1685,7 +1685,7 @@ function markPrePaid(){
   saveBills(); closeSheet('pay-sheet'); render();
 }
 function markSkipped(){
-  const b = bills.find(x=>x.id===currentPaySheetId);
+  const b = bills.find(x=>x.id===payingId);
   if(!b) return;
   if(!b.payments) b.payments={};
   b.payments[currentPeriod()] = {skipped:true, skippedDate:new Date().toISOString().split('T')[0]};
